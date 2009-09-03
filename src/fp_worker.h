@@ -14,20 +14,19 @@
 // posix threads and vector
 #include <pthread.h>
 #include <vector>
-// fastcgi
-#include <fcgiapp.h>
-#include <fcgio.h>
+
 // Python
 #include <Python.h>
 // core components
 #include "fp_log.h"
 #include "fp_config.h"
+#include "fp_fastcgi.h"
 
 namespace fp {
     class worker: public log, public config {
 
     public:
-        worker(char *socket);
+        worker(fastcgi &fc);
         ~worker();
     
         int acceptor();
@@ -38,9 +37,8 @@ namespace fp {
         bool acceptUnlock();
         
     private:
-        int fd;
+        fastcgi *fcgi;
         pthread_attr_t attr;
-        pthread_mutex_t accept_mutex;
         std::vector<pthread_t> threads;
 
         PyThreadState *mainThreadState;

@@ -11,13 +11,12 @@
 
 namespace fp {
     
-    worker::worker(char *socket) {
+    worker::worker(fastcgi &fc) {
+        fcgi = &fc;
+        
         // create joinable threads
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-        // initialize accept mutex 
-        pthread_mutex_init(&accept_mutex, NULL);
 
         // initialize python threading environment
         Py_InitializeEx(0);
@@ -25,10 +24,6 @@ namespace fp {
         mainThreadState = NULL;
         mainThreadState = PyThreadState_Get();
         PyEval_ReleaseLock();
-
-        // initialize fastcgi environment and open socket
-        FCGX_Init();
-        fd = FCGX_OpenSocket(socket, 5000);
     }
     
     worker::~worker() {
@@ -38,9 +33,9 @@ namespace fp {
     }
     
     int worker::acceptor() {
-        // allocating reqest structure
         FCGX_Request request;
-        FCGX_InitRequest(&request, fd, 0);
+        
+        fcgi->initRequest(request);
         
         // Create thread context
         PyEval_AcquireLock();
@@ -51,14 +46,12 @@ namespace fp {
         // run loop
         while (true) {
             int rc;
-
-            acceptLock();
-            rc = FCGX_Accept_r(&request);
-            acceptUnlock();
+            
+            rc = fcgi->acceptRequest(request);
             
             if (rc < 0)
-                break;            
-
+                break;
+            
             // do GIL then executing code
             PyEval_AcquireLock();
             PyThreadState_Swap(workerThreadState);
@@ -70,14 +63,10 @@ namespace fp {
             PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
 
-            // TODO here we should output some stuff 
-            FCGX_FPrintF(request.out,
-                         "Content-type: text/html\r\n"
-                         "\r\n"
-                         "<title>FastCGI Hello! (multi-threaded C, fcgiapp library)</title>"
-                         "<h1>123123</h1>");
+            fcgi->sendResponse(request);
+            
             // finishing request
-            FCGX_Finish_r(&request);
+            fcgi->finishRequest(request);
         }
         
         // Worker thread state is not needed any more
@@ -91,15 +80,7 @@ namespace fp {
         // TODO check out condition
         return 0;
     }
-    
-    bool worker::acceptLock() {
-        pthread_mutex_lock(&accept_mutex);
-    }
-    
-    bool worker::acceptUnlock() {
-        pthread_mutex_unlock(&accept_mutex);        
-    }
-    
+        
     int worker::startWorker() {
         // calculate how much threads we need and reserv space for all of them
         int wnt = cnf.max_conn / cnf.workers_cnt;

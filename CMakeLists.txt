@@ -17,6 +17,7 @@ include_directories ( src ${PYTHON_INCLUDE_PATH})
 set(fastpy_src
     src/fastpy.cpp
     src/fp_config.cpp
+    src/fp_fastcgi.cpp
     src/fp_core.cpp
     src/fp_log.cpp
     src/fp_worker.cpp

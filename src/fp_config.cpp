@@ -23,7 +23,7 @@ namespace fp {
         
     }
     
-    int config::read(char *file_name) {
+    int config::readConf(char *file_name) {
         char buff[65535];
         std::string line;
         in_file->open(file_name, std::fstream::in);

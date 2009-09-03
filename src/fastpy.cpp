@@ -49,7 +49,7 @@ namespace fp {
             return 254;
         }
         
-        if (cnf.read(config_f) < 0) {
+        if (readConf(config_f) < 0) {
             return 253;
         }
         
@@ -59,11 +59,46 @@ namespace fp {
     }
     
     int fastJs::runFPy() {
+        // opening socket
+        if (fcgi.openSock(sock_f) < 0) {
+            return 250;
+        }
+
+        // forking and working
+        for (int i=0; i < cnf.workers_cnt; i++) {
+            createChild();
+        }
         
-        worker w(sock_f);
+        return 0;
+    }
+    
+
+    int fastJs::createChild() {
+        int fpid = fork();
         
-        w.startWorker();
-        w.waitWorker();
+        if (fpid == 0) {
+            // some where in kenya(it`s our childrens)
+            worker w(fcgi);
+            
+            w.startWorker();
+            w.waitWorker();
+            
+            exit(0);                
+        } else if (fpid > 0){
+            // lions and tigers
+            // simplu returning back
+        } else {
+            return -1;
+        }
+        
+        return 0;
+    }
+    
+    int fastJs::yesMaster() {
+        
+        while (true) {
+            
+        }
         
         return 0;
     }

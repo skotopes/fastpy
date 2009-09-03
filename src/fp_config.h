@@ -38,7 +38,7 @@ namespace fp {
         config();
         ~config();
 
-        int read(char *file_name);
+        int readConf(char *file_name);
 
     private:
         std::ifstream *in_file;

@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "fp_config.h"
 #include "fp_log.h"
+#include "fp_fastcgi.h"
 #include "fp_worker.h"
 
 namespace fp {
@@ -28,9 +29,13 @@ namespace fp {
     private:
         char *config_f;
         char *sock_f;
-        config cnf;
-        
+
+        fastcgi fcgi;
+
         int runFPy();
+        int createChild();
+        int yesMaster();
+        
         void usage();
     };
     
