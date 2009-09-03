@@ -29,4 +29,4 @@ set_target_properties(fastpy PROPERTIES VERSION 0.0.1 SOVERSION 0)
 
 ########### install files ###############
 
-install(TARGETS fastjs RUNTIME DESTINATION bin)
+install(TARGETS fastpy RUNTIME DESTINATION bin)
