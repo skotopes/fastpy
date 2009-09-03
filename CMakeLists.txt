@@ -9,11 +9,10 @@ IF (NOT HAVE_FCGI)
 ENDIF(NOT HAVE_FCGI)
 
 find_package(PythonLibs)
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
 
 set(CMAKE_INSTALL_PREFIX "/usr")
 add_subdirectory ( src )
-include_directories ( src )
+include_directories ( src ${PYTHON_INCLUDE_PATH})
 
 set(fastpy_src
     src/fastpy.cpp
@@ -23,7 +22,7 @@ set(fastpy_src
     src/fp_worker.cpp
 )
 
-add_executable (fastpy ${fastjs_src})
+add_executable (fastpy ${fastpy_src})
 
 target_link_libraries(fastpy fcgi ${PYTHON_LIBRARY})
 set_target_properties(fastpy PROPERTIES VERSION 0.0.1 SOVERSION 0)
