@@ -57,7 +57,8 @@ namespace fp {
             PyThreadState_Swap(workerThreadState);
 
             // TODO some stuff from config and so on
-            PyRun_SimpleString("print 'Today is'\n");
+            PyRun_SimpleString("import random, math\n"
+                               "e = math.sin(random.random()*360)");
 
             // releasing GIL
             PyThreadState_Swap(NULL);
