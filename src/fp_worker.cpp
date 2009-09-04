@@ -106,8 +106,6 @@ namespace fp {
         path_final += python_path;
         PySys_SetPath((char*)path_final.c_str());
         
-        std::cout << Py_GetPath();
-        
         // getting srcipt object 
         h.pScript = PyString_FromString(def_vhost.script.c_str());
         
