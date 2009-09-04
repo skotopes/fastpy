@@ -19,11 +19,14 @@ namespace fp {
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
         // initialize python threading environment
+        Py_SetProgramName(app_name);
         Py_InitializeEx(0);
         PyEval_InitThreads();
         mainThreadState = NULL;
         mainThreadState = PyThreadState_Get();
         PyEval_ReleaseLock();
+        
+        def_vhost = vhosts["*"];
     }
     
     worker::~worker() {
@@ -46,25 +49,36 @@ namespace fp {
         // run loop
         while (true) {
             int rc;
+            std::string out;
             
             rc = fcgi->acceptRequest(request);
             
             if (rc < 0)
                 break;
             
-            // do GIL then executing code
+            // do GIL then execute code
             PyEval_AcquireLock();
             PyThreadState_Swap(workerThreadState);
 
-            // TODO some stuff from config and so on
-            PyRun_SimpleString("import random, math\n"
-                               "e = math.sin(random.random()*360)");
+            handler_t h;
+            
+            if (initHandler(h) == 0) {
+                if (runHandler(h, out) < 0) {
+                    out = "Failed";
+                    PyErr_Print();
+                }
 
+                releaseHandler(h);
+            } else {
+                out = "Unable to initialze handler";
+                PyErr_Print();
+            }
+            
             // releasing GIL
             PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
 
-            fcgi->sendResponse(request);
+            fcgi->sendResponse(request, out);
             
             // finishing request
             fcgi->finishRequest(request);
@@ -81,12 +95,80 @@ namespace fp {
         // TODO check out condition
         return 0;
     }
+    
+    int worker::initHandler(handler_t &h) {
+        std::string path_final;
+        const char* python_path = Py_GetPath();
+
+        // Setting path for object
+        path_final = def_vhost.base_dir;
+        path_final += ":";
+        path_final += python_path;
+        PySys_SetPath((char*)path_final.c_str());
         
+        std::cout << Py_GetPath();
+        
+        // getting srcipt object 
+        h.pScript = PyString_FromString(def_vhost.script.c_str());
+        
+        // Importing object
+        h.pModule = PyImport_Import(h.pScript);
+        Py_DECREF(h.pScript);
+
+        // if pModule was imported prperly we will be able to continue
+        if (h.pModule == NULL) {
+            return -1;
+        }
+        
+        h.pFunc = PyObject_GetAttrString(h.pModule, def_vhost.handler.c_str());
+        /* pFunc is a new reference */
+        
+        if (h.pFunc == NULL || !PyCallable_Check(h.pFunc)) {
+            Py_XDECREF(h.pFunc);
+            Py_DECREF(h.pModule);
+            return -2;
+        }
+
+        return 0;
+    }
+
+    int worker::runHandler(handler_t &h, std::string &output) {
+        PyObject *pReturn;
+        char *pOutput;
+        
+        pReturn = PyObject_CallObject(h.pFunc, NULL);
+
+        if (pReturn == NULL) {
+            return -1;
+        }
+        
+        pOutput = PyString_AsString(pReturn);
+        
+        if (pOutput == NULL) {
+            Py_DECREF(pReturn);
+            return -2;
+        }
+        
+        output = pOutput;
+        
+        Py_DECREF(pReturn);
+        
+        return 0;
+    }
+
+    int worker::releaseHandler(handler_t &h) {
+        // cleanup handler
+        Py_XDECREF(h.pFunc);
+        Py_DECREF(h.pModule);
+        
+        return 0;
+    }
+
     int worker::startWorker() {
         // calculate how much threads we need and reserv space for all of them
         int wnt = cnf.max_conn / cnf.workers_cnt;
         threads.reserve(wnt);
-        
+
         for (int i=0;i < wnt;i++) {
             pthread_t thread;
             

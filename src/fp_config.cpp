@@ -10,7 +10,7 @@
 #include "fp_config.h"
 
 namespace fp {
-    
+    char *config::app_name;
     conf_t config::cnf;
     std::map<std::string, vhost_t> config::vhosts;
 
@@ -25,6 +25,7 @@ namespace fp {
     
     int config::readConf(char *file_name) {
         char buff[65535];
+        vt = NULL;
         std::string line;
         in_file->open(file_name, std::fstream::in);
         
@@ -59,13 +60,12 @@ namespace fp {
                         std::map<std::string, vhost_t>::iterator v_it;
                         v_it = vhosts.find(vt->hostname);
                         
-                        if (v_it == vhosts.end()) {
+                        if (v_it != vhosts.end()) {
                             printLine("Config error: virtual host declared mumltiple times");
                             return -1;
                         }
                         
-                        // TODO is what i`m thinkin or not ?
-                        (*v_it).second = *vt;
+                        vhosts[vt->hostname] = *vt;
                         
                         delete vt;
                     }
@@ -120,6 +120,8 @@ namespace fp {
                             vt->hostname = val;
                         } else if (key.compare("base_directory") == 0) {
                             vt->base_dir = val;
+                        } else if (key.compare("script") == 0) {
+                            vt->script = val;
                         } else if (key.compare("wsgi_handler") == 0) {
                             vt->handler = val;
                         }
@@ -130,6 +132,20 @@ namespace fp {
                 }
             }
         }
+        
+        // config is parsed and probably we need to commit last section
+        if (group.size() != 0 && group.compare("virtual_host") == 0) {
+            std::map<std::string, vhost_t>::iterator v_it;
+            v_it = vhosts.find(vt->hostname);
+            
+            if (v_it != vhosts.end()) {
+                printLine("Config error: virtual host declared mumltiple times");
+                return -1;
+            }
+            
+            vhosts[vt->hostname] = *vt;
+            delete vt;
+        }        
         
         return 0;
     }

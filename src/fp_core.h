@@ -15,7 +15,6 @@
 #include <stdlib.h>
 
 namespace fp {
-    
     class core {
     public:
         void trim(std::string& str);

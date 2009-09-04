@@ -14,7 +14,6 @@
 // posix threads and vector
 #include <pthread.h>
 #include <vector>
-
 // Python
 #include <Python.h>
 // core components
@@ -22,26 +21,33 @@
 #include "fp_config.h"
 #include "fp_fastcgi.h"
 
-namespace fp {
+namespace fp {    
+    struct handler_t {
+        bool is_ok;
+        PyObject *pScript;
+        PyObject *pModule;
+        PyObject *pFunc;
+    };
+    
     class worker: public log, public config {
-
     public:
         worker(fastcgi &fc);
         ~worker();
     
-        int acceptor();
         int startWorker();
         int waitWorker();
-        
-        bool acceptLock();
-        bool acceptUnlock();
         
     private:
         fastcgi *fcgi;
         pthread_attr_t attr;
         std::vector<pthread_t> threads;
-
         PyThreadState *mainThreadState;
+        vhost_t def_vhost;
+
+        int acceptor();
+        int initHandler(handler_t &h);
+        int runHandler(handler_t &h, std::string &output);
+        int releaseHandler(handler_t &h);
         
         static void *workerThread(void *data);
     };

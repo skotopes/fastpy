@@ -22,6 +22,9 @@ namespace fp {
     
     int fastJs::go(int argc, char **argv) {
         int c;
+        
+        app_name = argv[0];
+        
         while ((c = getopt (argc, argv, "hvc:s:")) != -1) {
             switch (c) {
                 case 'v':

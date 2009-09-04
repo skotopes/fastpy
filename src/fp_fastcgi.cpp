@@ -19,14 +19,12 @@ namespace fp {
         // initialize accept mutex 
         if (!inited) {
             pthread_mutex_init(&accept_mutex, NULL);
+            // initialize fastcgi environment and open socket
+            FCGX_Init();
         }
-        
-        // initialize fastcgi environment and open socket
-        FCGX_Init();
     }
     
     fastcgi::~fastcgi() {
-        
     }
     
     int fastcgi::openSock(char *socket) {
@@ -37,8 +35,6 @@ namespace fp {
     
     int fastcgi::initRequest(FCGX_Request &request) {
         FCGX_InitRequest(&request, fd, 0);
-
-        
 
         return 0;
     }
@@ -53,13 +49,13 @@ namespace fp {
         return rc;
     }
 
-    int fastcgi::sendResponse(FCGX_Request &request) {
+    int fastcgi::sendResponse(FCGX_Request &request, std::string output) {
         // TODO here we should output some stuff 
         FCGX_FPrintF(request.out,
                      "Content-type: text/html\r\n"
                      "\r\n"
                      "<title>FastCGI Hello! (multi-threaded C, fcgiapp library)</title>"
-                     "<h1>123123</h1>");
+                     "<h1>%s</h1>", output.c_str());
             
         return 0;
     }    

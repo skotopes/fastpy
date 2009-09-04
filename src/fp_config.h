@@ -30,6 +30,7 @@ namespace fp {
     struct vhost_t {
         std::string hostname;
         std::string base_dir;
+        std::string script;
         std::string handler;
     };
     
@@ -46,6 +47,7 @@ namespace fp {
         vhost_t *vt;
 
     protected:
+        static char *app_name;
         static conf_t cnf;
         static std::map<std::string, vhost_t> vhosts;
         
