@@ -123,7 +123,7 @@ namespace fp {
                         } else if (key.compare("script") == 0) {
                             vt->script = val;
                         } else if (key.compare("wsgi_handler") == 0) {
-                            vt->handler = val;
+                            vt->point = val;
                         }
                     } else {
                         printLine("Config error: i don`t know what do you want from me");

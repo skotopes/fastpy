@@ -31,7 +31,7 @@ namespace fp {
         std::string hostname;
         std::string base_dir;
         std::string script;
-        std::string handler;
+        std::string point;
     };
     
     class config: public core {
