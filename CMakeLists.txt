@@ -21,6 +21,7 @@ set(fastpy_src
     src/fp_core.cpp
     src/fp_log.cpp
     src/fp_worker.cpp
+    src/fp_handler.cpp
 )
 
 add_executable (fastpy ${fastpy_src})
