@@ -77,8 +77,10 @@ namespace fp {
             // releasing GIL
             PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
+            
 
             fcgi->sendResponse(request, out);
+//            fcgi->writeResponse(request, out);
             
             // finishing request
             fcgi->finishRequest(request);
@@ -132,23 +134,63 @@ namespace fp {
 
     int worker::runHandler(handler_t &h, std::string &output) {
         PyObject *pReturn;
-        char *pOutput;
         
+        
+        // Calling our stuff
         pReturn = PyObject_CallObject(h.pFunc, NULL);
 
+        // in case if something goes wrong
         if (pReturn == NULL) {
             return -1;
         }
-        
-        pOutput = PyString_AsString(pReturn);
-        
-        if (pOutput == NULL) {
+
+        // it placed here cause we do not need to have it earlier
+        char *pOutput;
+
+        // checking call result
+        if (PyList_Check(pReturn)) {
+            int rSize = PyList_Size(pReturn);
+            
+            for (int i=0; i<rSize; i++) {
+                // sSobj is borrowed reference so we DO NOT NEED to decrement reference count  
+                PyObject* sSobj = PyList_GetItem(pReturn, i);
+
+                // Check if returned object is string
+                if (!PyString_Check(sSobj)) {
+                    Py_DECREF(pReturn);
+                    return -3;                    
+                }
+                
+                // get char array
+                pOutput = PyString_AsString(sSobj);
+                
+                // stringToChar failed, freeing result and return to main cycle
+                if (pOutput == NULL) {
+                    Py_DECREF(pReturn);
+                    return -3;
+                }
+                
+                // TODO: PEP333 probably we on the right way, but we chould check if headers os sent 
+                output += pOutput;
+            }
+        } else if (PyString_Check(pReturn)) {
+            // get char array
+            pOutput = PyString_AsString(pReturn);
+            
+            // stringToChar failed, freeing result and return to main cycle
+            if (pOutput == NULL) {
+                Py_DECREF(pReturn);
+                return -4;
+            }
+            
+            output = pOutput;            
+        } else {
+            // returned object of incompatible type, finish him.
             Py_DECREF(pReturn);
             return -2;
         }
         
-        output = pOutput;
-        
+        // if everything fine we can decriment reference count
         Py_DECREF(pReturn);
         
         return 0;

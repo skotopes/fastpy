@@ -28,7 +28,7 @@ namespace fp {
         PyObject *pModule;
         PyObject *pFunc;
     };
-    
+        
     class worker: public log, public config {
     public:
         worker(fastcgi &fc);
