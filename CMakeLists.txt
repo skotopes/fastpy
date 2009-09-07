@@ -26,7 +26,7 @@ set(fastpy_src
 
 add_executable (fastpy ${fastpy_src})
 
-target_link_libraries(fastpy fcgi ${PYTHON_LIBRARY})
+target_link_libraries(fastpy pthread fcgi ${PYTHON_LIBRARY})
 set_target_properties(fastpy PROPERTIES VERSION 0.0.1 SOVERSION 0)
 
 ########### install files ###############

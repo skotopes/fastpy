@@ -199,8 +199,9 @@ namespace fp {
             return -1;
         }
         
-        PyDict_SetItem(dict, PyString_FromString("wsgi.multiprocess"), PyString_FromString("true"));
-        PyDict_SetItem(dict, PyString_FromString("wsgi.multithread"), PyString_FromString("true"));
+        PyDict_SetItem(dict, PyString_FromString("wsgi.multiprocess"), PyBool_FromLong(1));
+        PyDict_SetItem(dict, PyString_FromString("wsgi.multithread"), PyBool_FromLong(1));
+        PyDict_SetItem(dict, PyString_FromString("wsgi.run_once"), PyBool_FromLong(0));
         
         return 0;
     }
@@ -210,5 +211,9 @@ namespace fp {
         Py_DECREF(dict);
         return 0;
     }
-    
+
+    PyObject *handler::start_response(PyObject *s, PyObject *args) {
+        
+        return Py_BuildValue("i", 1);
+    }
 }

@@ -26,20 +26,23 @@ namespace fp {
     }
     
     int worker::acceptor() {
+        // some thread specific stuff
         FCGX_Request r;
         thread_t t;
         
+        // Init request and thread state
         fcgi->initRequest(r);
         hand->createThreadState(t);
                 
         // run loop
         while (true) {
-            std::string out;
-            
+            // accepting connection
             int rc = fcgi->acceptRequest(r);
             
+            // in case if some shit happens
             if (rc < 0)
                 break;
+            
             // procced request with handler
             hand->proceedRequest(t, r, def_vhost);
             

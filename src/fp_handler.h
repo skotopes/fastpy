@@ -52,6 +52,7 @@ namespace fp {
         int initEnviron(PyObject *dict);
         int releaseEnviron(PyObject *dict);
         
+        static PyObject *start_response(PyObject *s, PyObject *args);
     };    
     
 }
