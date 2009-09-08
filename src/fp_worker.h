@@ -37,7 +37,6 @@ namespace fp {
         
         pthread_attr_t attr;
         std::vector<pthread_t> threads;
-        vhost_t def_vhost;
 
         int acceptor();
         

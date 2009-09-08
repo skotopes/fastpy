@@ -29,6 +29,7 @@ namespace fp {
     private:
         char *config_f;
         char *sock_f;
+        bool detach;
 
         fastcgi fcgi;
 

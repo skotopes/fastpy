@@ -20,14 +20,17 @@ namespace fp {
     struct thread_t {
         PyInterpreterState * mainInterpreterState;
         PyThreadState * workerThreadState;
-        
     };
     
-    struct handler_t {
-        bool is_ok;
-        PyObject *pScript;
+    struct module_t {
         PyObject *pModule;
         PyObject *pFunc;
+    };
+
+    struct start_response_t {
+        PyObject_HEAD
+        FCGX_Request *r;
+        fastcgi *f;
     };
     
     class handler: public config {
@@ -36,23 +39,23 @@ namespace fp {
         ~handler();
         
         int createThreadState(thread_t &t);
+        int proceedRequest(thread_t &t, FCGX_Request &r);
         int deleteThreadState(thread_t &t);
-        
-        int proceedRequest(thread_t &t, FCGX_Request &r, vhost_t &v);
         
     private:
         fastcgi *fcgi;
         PyThreadState *mainThreadState;
+        vhost_t v;
 
-        int initHandler(handler_t &h, vhost_t &v);
-        int runHandler(handler_t &h, std::string &output);
-        int releaseHandler(handler_t &h);
+        int initModule(module_t &m);
+        int runModule(module_t &m, FCGX_Request &r);
+        int releaseModule(module_t &m);
         
+        int setPyEnv();
         
-        int initEnviron(PyObject *dict);
-        int releaseEnviron(PyObject *dict);
+        int initArgs(PyObject *dict);
+        int releaseArgs(PyObject *dict);
         
-        static PyObject *start_response(PyObject *s, PyObject *args);
     };    
     
 }

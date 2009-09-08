@@ -26,9 +26,10 @@ namespace fp {
         int openSock(char *socket);
         int initRequest(FCGX_Request &request);
         int acceptRequest(FCGX_Request &request);
-        int sendResponse(FCGX_Request &request, std::string &output);
-        int writeResponse(FCGX_Request &request, std::string &output);
+        int writeResponse(FCGX_Request &request, char *output);
         int finishRequest(FCGX_Request &request);
+        
+        int error500(FCGX_Request &request, std::string output);
         
     private:
         static int fd;

@@ -17,4 +17,9 @@ namespace fp {
     log::~log() {
         
     }
+    
+    int log::logError(std::string s) {
+        std::cout << s << std::endl;
+        return 0;
+    }
 }

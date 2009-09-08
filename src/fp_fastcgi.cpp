@@ -49,19 +49,17 @@ namespace fp {
         return rc;
     }
 
-    int fastcgi::sendResponse(FCGX_Request &request, std::string &output) {
-        // TODO here we should output some stuff 
+    int fastcgi::error500(FCGX_Request &request, std::string output) {
         FCGX_FPrintF(request.out,
                      "Content-type: text/html\r\n"
                      "\r\n"
-                     "<title>FastCGI Hello! (multi-threaded C, fcgiapp library)</title>"
-                     "<h1>%s</h1>"
-                     "<h1>%d</h1>", output.c_str(), output.max_size());
+                     "<title>Internal server error</title>"
+                     "<h1>%s</h1>", output.c_str());
         return 0;
     }    
 
-    int fastcgi::writeResponse(FCGX_Request &request, std::string &output) {
-        FCGX_PutStr(output.c_str(), output.size(), request.out);
+    int fastcgi::writeResponse(FCGX_Request &request, char *output) {
+        FCGX_PutStr(output, strlen(output), request.out);
         return 0;
     }        
     

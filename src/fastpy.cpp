@@ -14,6 +14,7 @@ namespace fp {
     fastJs::fastJs() {
         config_f = NULL;
         sock_f = NULL;
+        detach = false;
     }
     
     fastJs::~fastJs() {
@@ -25,8 +26,11 @@ namespace fp {
         
         app_name = argv[0];
         
-        while ((c = getopt (argc, argv, "hvc:s:")) != -1) {
+        while ((c = getopt (argc, argv, "dhvc:s:")) != -1) {
             switch (c) {
+                case 'd':
+                    detach = true;
+                    break;                    
                 case 'v':
                     if (verbose) {
                         debug = true;
@@ -108,11 +112,12 @@ namespace fp {
     
     void fastJs::usage() {
         std::cout << "Usage:"<< std::endl
-            << "fastjs OPTIONS"<< std::endl
+            << "fastpy OPTIONS"<< std::endl
             << std::endl
             << "Options:"<< std::endl
             << "-s [unix_socket]"<< std::endl
             << "-c [config_file]"<< std::endl
+            << "-d \t\t- detach from console"<< std::endl
             << "-h \t\t- help"<< std::endl
             << "-v \t\t- verbose output(more v - more verbose)"<< std::endl;
     }

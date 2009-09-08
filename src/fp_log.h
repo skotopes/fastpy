@@ -10,6 +10,7 @@
 #ifndef FP_LOG_H
 #define FP_LOG_H
 
+#include <iostream>
 #include "fp_core.h"
 
 namespace fp {
@@ -19,6 +20,8 @@ namespace fp {
         log();
         ~log();
 
+        int logError(std::string s);
+        
     private:
         
     };

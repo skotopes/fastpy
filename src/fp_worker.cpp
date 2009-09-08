@@ -17,9 +17,7 @@ namespace fp {
         
         // create joinable threads
         pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        
-        def_vhost = vhosts["*"];
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);    
     }
     
     worker::~worker() {
@@ -44,10 +42,7 @@ namespace fp {
                 break;
             
             // procced request with handler
-            hand->proceedRequest(t, r, def_vhost);
-            
-            // finishing request
-            fcgi->finishRequest(r);
+            hand->proceedRequest(t, r);
         }
         
         hand->deleteThreadState(t);
