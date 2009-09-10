@@ -66,14 +66,22 @@ namespace fp {
     }
     
     int fastJs::runFPy() {
+        fcgi = new fastcgi;
+        
         // opening socket
-        if (fcgi.openSock(sock_f) < 0) {
+        if (fcgi->openSock(sock_f) < 0) {
             return 250;
         }
 
-        // forking and working
-        for (int i=0; i < cnf.workers_cnt; i++) {
-            createChild();
+        if (detach) {
+            // forking and working
+            for (int i=0; i < cnf.workers_cnt; i++) {
+                createChild();
+            }            
+        } else {
+            worker w(fcgi);
+            w.startWorker();
+            w.waitWorker();            
         }
         
         return 0;

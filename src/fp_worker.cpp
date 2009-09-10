@@ -11,9 +11,9 @@
 
 namespace fp {
     
-    worker::worker(fastcgi &fc) {
-        fcgi = &fc;
-        hand = new handler(&fc);
+    worker::worker(fastcgi *fc) {
+        fcgi = fc;
+        py = new pyengine();
         
         // create joinable threads
         pthread_attr_init(&attr);
@@ -24,14 +24,13 @@ namespace fp {
     }
     
     int worker::acceptor() {
-        // some thread specific stuff
-        FCGX_Request r;
-        thread_t t;
+        FCGX_Request *r;
         
-        // Init request and thread state
+        // Init request and handler
+        r = new FCGX_Request;
         fcgi->initRequest(r);
-        hand->createThreadState(t);
-                
+        handler h(fcgi, r);
+        
         // run loop
         while (true) {
             // accepting connection
@@ -42,10 +41,10 @@ namespace fp {
                 break;
             
             // procced request with handler
-            hand->proceedRequest(t, r);
+            h.proceedRequest();
         }
         
-        hand->deleteThreadState(t);
+        delete &h;
         
         // TODO check out condition
         return 0;

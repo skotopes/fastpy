@@ -10,16 +10,76 @@
 #include "fp_handler.h"
 
 namespace fp {
+
+    PyThreadState *pyengine::mainThreadState = NULL;
     
+    pyengine::pyengine() {
+        // initialize python threading environment
+        Py_SetProgramName(app_name);
+        
+        Py_InitializeEx(0);
+        PyEval_InitThreads();
+        mainThreadState = PyThreadState_Get();
+        PyEval_ReleaseLock();
+    }
+    
+    pyengine::~pyengine() {
+        // Destroying GIL and finalizing python interpritator
+        PyEval_AcquireLock();
+        Py_Finalize();        
+    }
+
+    int pyengine::createThreadState(thread_t &t) {
+        // creating python thread state
+        //pthread_mutex_lock(&ts_create_mutex);
+        
+        PyEval_AcquireLock();
+        t.mainInterpreterState = mainThreadState->interp;
+        t.workerThreadState = PyThreadState_New(t.mainInterpreterState);
+        PyEval_ReleaseLock();
+        
+        //pthread_mutex_unlock(&ts_create_mutex);
+        
+        return 0;
+    }
+    
+    int pyengine::switchAndLockTC(thread_t &t) {
+        PyEval_AcquireLock();
+        PyThreadState_Swap(t.workerThreadState);
+
+        return 0;
+    }
+    
+    int pyengine::nullAndUnlockTC(thread_t &t) {
+        PyThreadState_Swap(NULL);
+        PyEval_ReleaseLock();
+        
+        return 0;
+    }
+    
+    int pyengine::deleteThreadState(thread_t &t) {
+        // Worker thread state is not needed any more
+        // releasing lock and freeing mutexes
+        PyEval_AcquireLock();
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(t.workerThreadState);
+        PyThreadState_Delete(t.workerThreadState);
+        PyEval_ReleaseLock();
+        
+        return 0;
+    }
+    /* ========================================================================== */
     static PyObject *start_response(PyObject *self, PyObject *args, PyObject *kw) {
         start_response_t *s = (start_response_t*)self;
-        s->f->writeResponse(*s->r, (char*)"start response involved");
+        s->f->writeResponse(s->r, (char*)"start response involved");
+        
+        std::cout << "we are here";
         
         return PyBool_FromLong(1);
     };
     
     static PyTypeObject start_response_type = {
-        PyObject_HEAD_INIT(NULL)
+        PyObject_HEAD_INIT(&PyType_Type)
         0,                          /* ob_size        */
         "start_response",           /* tp_name        */
         sizeof(start_response_t),	/* tp_basicsize   */
@@ -34,92 +94,74 @@ namespace fp {
         0,                          /* tp_as_sequence */
         0,                          /* tp_as_mapping  */
         0,                          /* tp_hash        */
-        start_response,             /* tp_call        */
+        &start_response,            /* tp_call        */
         0,                          /* tp_str         */
         0,                          /* tp_getattro    */
         0,                          /* tp_setattro    */
         0,                          /* tp_as_buffer   */
-        Py_TPFLAGS_DEFAULT,         /* tp_flags       */
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,         /* tp_flags       */
         "start_response method",    /* tp_doc         */
     };
-    
-    handler::handler(fastcgi *f) {
-        fcgi = f;
-        // initialize python threading environment
-        Py_SetProgramName(app_name);
-        
-        Py_InitializeEx(0);
-        PyEval_InitThreads();
-        mainThreadState = NULL;
-        mainThreadState = PyThreadState_Get();
-        PyEval_ReleaseLock();
 
+    /* ========================================================================== */
+    
+    int handler::gat_no = 0;
+    
+    handler::handler(fastcgi *f, FCGX_Request *r) {
+        fcgi = f;
+        req = r;
+        
         v = vhosts["*"];
+        
+        py->createThreadState(t);
+        
+        at_no = gat_no;
+        gat_no++;
+        // TODO REMOVE IT
+        start_response_type.tp_new = PyType_GenericNew;
+        
+        if (PyType_Ready(&start_response_type) < 0)
+            std::cout << "shiiit \r\n";
+        
         setPyEnv();
     }
     
     handler::~handler() {
-        // Destroying GIL and finalizing python interpritator
-        PyEval_AcquireLock();
-        Py_Finalize();        
+        py->deleteThreadState(t);
     }
     
-    int handler::createThreadState(thread_t &t) {
-
-        PyEval_AcquireLock();
-        t.mainInterpreterState = mainThreadState->interp;
-        t.workerThreadState = PyThreadState_New(t.mainInterpreterState);
-        PyEval_ReleaseLock();
-        
-        return 0;
-    }
-
-    int handler::deleteThreadState(thread_t &t) {
-        // Worker thread state is not needed any more
-        // releasing lock and freeing mutexes 
-        PyEval_AcquireLock();
-        PyThreadState_Swap(NULL);
-        PyThreadState_Clear(t.workerThreadState);
-        PyThreadState_Delete(t.workerThreadState);
-        PyEval_ReleaseLock();
-
-        return 0;
-    }
-
-    int handler::proceedRequest(thread_t &t, FCGX_Request &r) {
-        // Do GIL then execute code
-        PyEval_AcquireLock();
-        PyThreadState_Swap(t.workerThreadState);
+    int handler::proceedRequest() {
+        // switch thread context
+        py->switchAndLockTC(t);
         
         module_t m;
         
         if (initModule(m) == 0) {
             // TODO remove it
-            fcgi->error500(r, "init ok");
+            fcgi->error500(req, "init ok");
             
-            if (runModule(m, r) < 0) {
+            if (runModule(m) < 0) {
                 PyErr_Print();
-                fcgi->error500(r, "Handler fucked up");
+                fcgi->error500(req, "Handler fucked up");
             }
             
             releaseModule(m);
         } else {
             PyErr_Print();
-            fcgi->error500(r, "Handler init fail");
+            fcgi->error500(req, "Handler init fail");
         }
         
-        // releasing GIL
-        PyThreadState_Swap(NULL);
-        PyEval_ReleaseLock();
-
+        // switch thread context to null, execution finished
+        py->nullAndUnlockTC(t);
+        
         // finishing request
-        fcgi->finishRequest(r);
+        fcgi->finishRequest(req);
 
         return 0;
     }
     
     int handler::initModule(module_t &m) {        
-        // getting srcipt object 
+        // getting srcipt object
         PyObject *pScript = PyString_FromString(v.script.c_str());
         
         // Importing object
@@ -143,18 +185,22 @@ namespace fp {
         return 0;
     }
     
-    int handler::runModule(module_t &m, FCGX_Request &r) {
-        PyObject *pReturn, *pEnviron = NULL, *pArgs = NULL;
+    int handler::runModule(module_t &m) {
+        PyObject *pReturn, *pArgs = NULL, *pEnviron = NULL;
         char *pOutput;
+        
+        pEnviron = PyDict_New();
+        
+        if (pEnviron == NULL) {
+            return -1;
+        }
         
         if (initArgs(pEnviron) < 0) {
             return -1;
         }
-        
-        pArgs = PyTuple_Pack(2, PyBool_FromLong(1), PyBool_FromLong(1));
-        //pArgs = Py_BuildValue("(OO)", pEnviron, pEnviron);
-        
-        Py_XINCREF(pEnviron);
+                
+        pArgs = PyTuple_Pack(2, pEnviron, &start_response_type);
+        Py_INCREF(&start_response_type);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(m.pFunc, pArgs);
@@ -165,7 +211,7 @@ namespace fp {
         if (pReturn == NULL) {
             return -1;
         }
-                
+
         // checking call result
         if (PyList_Check(pReturn)) {
             int rSize = PyList_Size(pReturn);
@@ -190,7 +236,7 @@ namespace fp {
                 }
                 
                 // TODO: PEP333 probably we on the right way, but we should check if headers is sent 
-                fcgi->writeResponse(r, pOutput);
+                fcgi->writeResponse(req, pOutput);
             }
         } else if (PyString_Check(pReturn)) {
             // get char array
@@ -202,7 +248,7 @@ namespace fp {
                 return -4;
             }
             
-            fcgi->writeResponse(r, pOutput);
+            fcgi->writeResponse(req, pOutput);
         } else {
             // returned object of incompatible type, finish him.
             Py_DECREF(pReturn);
@@ -236,15 +282,10 @@ namespace fp {
     }
         
     int handler::initArgs(PyObject *dict) {
-        dict = PyDict_New();
-        
-        if (dict == NULL) {
-            return -1;
-        }
-        
         PyDict_SetItem(dict, PyString_FromString("wsgi.multiprocess"), PyBool_FromLong(1));
         PyDict_SetItem(dict, PyString_FromString("wsgi.multithread"), PyBool_FromLong(1));
         PyDict_SetItem(dict, PyString_FromString("wsgi.run_once"), PyBool_FromLong(0));
+//        PyDict_SetItem(dict, PyString_FromString("FASTPY_THREAD"), PyInt_FromLong(t));
 
         return 0;
     }

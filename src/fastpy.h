@@ -31,7 +31,7 @@ namespace fp {
         char *sock_f;
         bool detach;
 
-        fastcgi fcgi;
+        fastcgi *fcgi;
 
         int runFPy();
         int createChild();

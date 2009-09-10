@@ -25,15 +25,15 @@ namespace fp {
         
     class worker: public log, public config {
     public:
-        worker(fastcgi &fc);
+        worker(fastcgi *fc);
         ~worker();
     
         int startWorker();
         int waitWorker();
         
     private:
+        pyengine *py;
         fastcgi *fcgi;
-        handler *hand;
         
         pthread_attr_t attr;
         std::vector<pthread_t> threads;
