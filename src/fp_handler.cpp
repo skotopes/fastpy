@@ -12,6 +12,7 @@
 namespace fp {
 
     PyThreadState *pyengine::mainThreadState = NULL;
+    long pyengine::tc_allocated = 0;
     
     pyengine::pyengine() {
         // initialize python threading environment
@@ -31,14 +32,13 @@ namespace fp {
 
     int pyengine::createThreadState(thread_t &t) {
         // creating python thread state
-        //pthread_mutex_lock(&ts_create_mutex);
-        
         PyEval_AcquireLock();
         t.mainInterpreterState = mainThreadState->interp;
         t.workerThreadState = PyThreadState_New(t.mainInterpreterState);
         PyEval_ReleaseLock();
-        
-        //pthread_mutex_unlock(&ts_create_mutex);
+
+        tc_allocated ++;
+        t.tc_number = tc_allocated;
         
         return 0;
     }
@@ -46,13 +46,15 @@ namespace fp {
     int pyengine::switchAndLockTC(thread_t &t) {
         PyEval_AcquireLock();
         PyThreadState_Swap(t.workerThreadState);
-
+        t.in_use = true;
+        
         return 0;
     }
     
     int pyengine::nullAndUnlockTC(thread_t &t) {
         PyThreadState_Swap(NULL);
         PyEval_ReleaseLock();
+        t.in_use = false;
         
         return 0;
     }
@@ -68,45 +70,11 @@ namespace fp {
         
         return 0;
     }
-    /* ========================================================================== */
-    static PyObject *start_response(PyObject *self, PyObject *args, PyObject *kw) {
-        start_response_t *s = (start_response_t*)self;
-        s->f->writeResponse(s->r, (char*)"start response involved");
-        
-        std::cout << "we are here";
-        
-        return PyBool_FromLong(1);
-    };
-    
-    static PyTypeObject start_response_type = {
-        PyObject_HEAD_INIT(&PyType_Type)
-        0,                          /* ob_size        */
-        "start_response",           /* tp_name        */
-        sizeof(start_response_t),	/* tp_basicsize   */
-        0,                          /* tp_itemsize    */
-        0,                          /* tp_dealloc     */
-        0,                          /* tp_print       */
-        0,                          /* tp_getattr     */
-        0,                          /* tp_setattr     */
-        0,                          /* tp_compare     */
-        0,                          /* tp_repr        */
-        0,                          /* tp_as_number   */
-        0,                          /* tp_as_sequence */
-        0,                          /* tp_as_mapping  */
-        0,                          /* tp_hash        */
-        &start_response,            /* tp_call        */
-        0,                          /* tp_str         */
-        0,                          /* tp_getattro    */
-        0,                          /* tp_setattro    */
-        0,                          /* tp_as_buffer   */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,         /* tp_flags       */
-        "start_response method",    /* tp_doc         */
-    };
 
     /* ========================================================================== */
     
-    int handler::gat_no = 0;
-    
+    bool handler::inited = false;
+        
     handler::handler(fastcgi *f, FCGX_Request *r) {
         fcgi = f;
         req = r;
@@ -115,13 +83,8 @@ namespace fp {
         
         py->createThreadState(t);
         
-        at_no = gat_no;
-        gat_no++;
-        // TODO REMOVE IT
-        start_response_type.tp_new = PyType_GenericNew;
-        
-        if (PyType_Ready(&start_response_type) < 0)
-            std::cout << "shiiit \r\n";
+        if (!inited) {
+        }
         
         setPyEnv();
     }
@@ -199,8 +162,7 @@ namespace fp {
             return -1;
         }
                 
-        pArgs = PyTuple_Pack(2, pEnviron, &start_response_type);
-        Py_INCREF(&start_response_type);
+        pArgs = PyTuple_Pack(2, pEnviron, pEnviron);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(m.pFunc, pArgs);
@@ -285,7 +247,7 @@ namespace fp {
         PyDict_SetItem(dict, PyString_FromString("wsgi.multiprocess"), PyBool_FromLong(1));
         PyDict_SetItem(dict, PyString_FromString("wsgi.multithread"), PyBool_FromLong(1));
         PyDict_SetItem(dict, PyString_FromString("wsgi.run_once"), PyBool_FromLong(0));
-//        PyDict_SetItem(dict, PyString_FromString("FASTPY_THREAD"), PyInt_FromLong(t));
+        PyDict_SetItem(dict, PyString_FromString("FASTPY_TC_NUMBER"), PyInt_FromLong(t.tc_number));
 
         return 0;
     }

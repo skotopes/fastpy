@@ -21,17 +21,13 @@ namespace fp {
     struct thread_t {
         PyInterpreterState * mainInterpreterState;
         PyThreadState * workerThreadState;
+        long tc_number;
+        bool in_use;
     };
     
     struct module_t {
         PyObject *pModule;
         PyObject *pFunc;
-    };
-
-    struct start_response_t {
-        PyObject_HEAD
-        FCGX_Request *r;
-        fastcgi *f;
     };
     
     // python engine and manipulators only
@@ -47,6 +43,7 @@ namespace fp {
         
     private:
         static PyThreadState *mainThreadState;
+        static long tc_allocated;
     };
     
     // handler and pyprocessing
@@ -64,6 +61,8 @@ namespace fp {
         
         vhost_t v;
         thread_t t;
+        
+        static bool inited;
 
         int initModule(module_t &m);
         int runModule(module_t &m);
