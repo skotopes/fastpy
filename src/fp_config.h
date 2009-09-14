@@ -27,7 +27,7 @@ namespace fp {
         int workers_ttl;
     };
     
-    struct vhost_t {
+    struct env_t {
         std::string hostname;
         std::string base_dir;
         std::string script;
@@ -44,13 +44,11 @@ namespace fp {
     private:
         std::ifstream *in_file;
         std::string group;
-        vhost_t *vt;
 
     protected:
         static char *app_name;
         static conf_t cnf;
-        static std::map<std::string, vhost_t> vhosts;
-        
+        static env_t env;        
     };
 }
 #endif

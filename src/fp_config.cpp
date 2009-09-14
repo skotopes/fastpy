@@ -12,7 +12,7 @@
 namespace fp {
     char *config::app_name;
     conf_t config::cnf;
-    std::map<std::string, vhost_t> config::vhosts;
+    env_t config::env;
 
     
     config::config() {
@@ -25,7 +25,6 @@ namespace fp {
     
     int config::readConf(char *file_name) {
         char buff[65535];
-        vt = NULL;
         std::string line;
         in_file->open(file_name, std::fstream::in);
         
@@ -55,31 +54,11 @@ namespace fp {
             
             if (line.compare(0, 1, "[") == 0) {
                 if (line.compare(line.size()-1, 1, "]") == 0) {
-                    // we have to commit virtual host config
-                    if (group.size() != 0 && group.compare("virtual_host") == 0) {
-                        std::map<std::string, vhost_t>::iterator v_it;
-                        v_it = vhosts.find(vt->hostname);
-                        
-                        if (v_it != vhosts.end()) {
-                            printLine("Config error: virtual host declared mumltiple times");
-                            return -1;
-                        }
-                        
-                        vhosts[vt->hostname] = *vt;
-                        
-                        delete vt;
-                    }
-
                     group = line.substr(1, line.size()-2);
 
                     if (group.size() == 0) {
                         printLine("Config error: dummy group definition");
                         return -1;
-                    }
-
-                    // if virtual host then allocate vhost structure    
-                    if (group.size() != 0 && group.compare("virtual_host") == 0) {
-                        vt = new vhost_t;
                     }
                 } else {
                     printLine("Config error: broken group definition");
@@ -115,15 +94,13 @@ namespace fp {
                         } else if (key.compare("group") == 0) {
                             
                         }
-                    } else if (group.compare("virtual_host") == 0) {
-                        if (key.compare("hostname") == 0) {
-                            vt->hostname = val;
-                        } else if (key.compare("base_directory") == 0) {
-                            vt->base_dir = val;
-                        } else if (key.compare("script") == 0) {
-                            vt->script = val;
+                    } else if (group.compare("environment") == 0) {
+                        if (key.compare("wsgi_path") == 0) {
+                            env.base_dir = val;
+                        } else if (key.compare("wsgi_script") == 0) {
+                            env.script = val;
                         } else if (key.compare("wsgi_handler") == 0) {
-                            vt->point = val;
+                            env.point = val;
                         }
                     } else {
                         printLine("Config error: i don`t know what do you want from me");
@@ -132,21 +109,7 @@ namespace fp {
                 }
             }
         }
-        
-        // config is parsed and probably we need to commit last section
-        if (group.size() != 0 && group.compare("virtual_host") == 0) {
-            std::map<std::string, vhost_t>::iterator v_it;
-            v_it = vhosts.find(vt->hostname);
-            
-            if (v_it != vhosts.end()) {
-                printLine("Config error: virtual host declared mumltiple times");
-                return -1;
-            }
-            
-            vhosts[vt->hostname] = *vt;
-            delete vt;
-        }        
-        
+                
         return 0;
     }
 

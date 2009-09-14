@@ -17,36 +17,61 @@
 
 namespace fp {
 
-    // helper structures 
+    /* ================================ python */
+    
     struct thread_t {
         PyInterpreterState * mainInterpreterState;
         PyThreadState * workerThreadState;
         long tc_number;
         bool in_use;
     };
-    
-    struct module_t {
-        PyObject *pModule;
-        PyObject *pFunc;
-    };
-    
+        
+    struct StartResponseObject {
+        PyObject_HEAD
+        FCGX_Request *r;
+        fastcgi *f;
+    };    
+            
     // python engine and manipulators only
     class pyengine: config {
     public:
         pyengine();
         ~pyengine();
 
-        int createThreadState(thread_t &t); // init py ts
-        int switchAndLockTC(thread_t &t); // begin exec
-        int nullAndUnlockTC(thread_t &t); // end exec
-        int deleteThreadState(thread_t &t); // remove py ts
+        // thread state switchers
+        int createThreadState(thread_t &t);
+        int switchAndLockTC(thread_t &t);
+        int nullAndUnlockTC(thread_t &t);
+        int deleteThreadState(thread_t &t);
+        
+        // helpers
+        int setPath();
+        
+        // wsgi callback module routines
+        int initCallback();
+        inline bool isCallbackReady() {return cbr_flag;};
+        inline PyObject *getCallback() {return pFunc;};
+        int releaseCallback();
+
+        // Additional pyobjects routines
+        StartResponseObject *newSRObject();
         
     private:
         static PyThreadState *mainThreadState;
         static long tc_allocated;
+
+        // wsgi call back
+        static bool cbr_flag;
+        static PyObject *pModule;
+        static PyObject *pFunc;
+        
+        // start_response
+        static PyTypeObject StartResponseType;
+        static PyObject *startResponse(PyObject *self, PyObject *args, PyObject *kw);
     };
     
-    // handler and pyprocessing
+    /* ================================ handler */
+
     class handler: public config {
     public:
         handler(fastcgi *f, FCGX_Request *r);
@@ -59,17 +84,10 @@ namespace fp {
         fastcgi *fcgi;
         FCGX_Request *req;
         
-        vhost_t v;
         thread_t t;
         
-        static bool inited;
-
-        int initModule(module_t &m);
-        int runModule(module_t &m);
-        int releaseModule(module_t &m);
-        
-        int setPyEnv();
-        
+        int runModule();
+                
         int initArgs(PyObject *dict);
         int releaseArgs(PyObject *dict);
         
