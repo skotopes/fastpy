@@ -11,6 +11,7 @@
 #define FP_HANDLER_H
 
 #include <Python.h>
+#include <sstream>
 
 #include "fp_config.h"
 #include "fp_fastcgi.h"

@@ -168,6 +168,7 @@ namespace fp {
     };
     
     PyObject *pyengine::startResponse(PyObject *self, PyObject *args, PyObject *kw) {
+        std::stringstream status, headers;
         StartResponseObject *s = (StartResponseObject*)self;
         
         int rSize = PyTuple_Size(args);
@@ -176,13 +177,29 @@ namespace fp {
             PyObject *pRC, *pHA;
             pRC = PyTuple_GetItem(args, 0); 
             pHA = PyTuple_GetItem(args, 1);
-            
+                        
             if (pRC == NULL || pHA == NULL) {
                 s->f->writeResponse(s->r, (char*)"500 null pointer in start response");
                 return PyBool_FromLong(0);
             }
-                
-            s->f->writeResponse(s->r, (char*)"start response involved");
+            
+            if (!PyList_Check(pHA)) {
+                s->f->error500(s->r, (char*)"args error");
+                return PyBool_FromLong(0);
+            }
+
+            status << "Status: " << PyString_AsString(pRC) << "\r\n";
+            s->f->writeResponse(s->r, (char*)status.str().c_str());
+
+            for (int i=0; i<PyList_Size(pHA); i++) {
+                PyObject *t= PyList_GetItem(pHA, i);
+                if (PyTuple_Check(t) && PyTuple_Size(t) == 2) {
+                    headers << PyTuple_GetItem(t, 0) << ": " << PyTuple_GetItem(t, 1) << "\r\n";
+                }
+            }
+
+            s->f->writeResponse(s->r, (char*)headers.str().c_str());
+            s->f->writeResponse(s->r, (char *)"\r\n");
         } else {
             // throw python exception
             PyObject_Print(args, stdout, Py_PRINT_RAW);
@@ -211,10 +228,7 @@ namespace fp {
         // switch thread context
         py->switchAndLockTC(t);
         
-        if (py->isCallbackReady()) {
-            // TODO remove it
-            fcgi->error500(req, "init ok");
-            
+        if (py->isCallbackReady()) {            
             if (runModule() < 0) {
                 PyErr_Print();
                 fcgi->error500(req, "Handler fucked up");
