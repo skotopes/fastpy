@@ -87,6 +87,7 @@ namespace fp {
         
         thread_t t;
         StartResponseObject *sro;
+        PyObject *pCallback;
         
         int runModule();
                 

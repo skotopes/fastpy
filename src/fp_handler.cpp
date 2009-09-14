@@ -114,7 +114,7 @@ namespace fp {
         }
         
         // get our method from module
-        pFunc = PyObject_GetAttrString(pModule, env.point.c_str());
+        pFunc = PyObject_GetAttrString(pModule, (char *)env.point.c_str());
         
         if (pFunc == NULL || !PyCallable_Check(pFunc)) {
             Py_XDECREF(pFunc);
@@ -188,13 +188,15 @@ namespace fp {
                 return PyBool_FromLong(0);
             }
 
-            status << "Status: " << PyString_AsString(pRC) << "\r\n";
+            status << "Status: " << (char*)PyString_AsString(pRC) << "\r\n";
             s->f->writeResponse(s->r, (char*)status.str().c_str());
 
             for (int i=0; i<PyList_Size(pHA); i++) {
                 PyObject *t= PyList_GetItem(pHA, i);
                 if (PyTuple_Check(t) && PyTuple_Size(t) == 2) {
-                    headers << PyTuple_GetItem(t, 0) << ": " << PyTuple_GetItem(t, 1) << "\r\n";
+                    PyObject *pA0 = PyTuple_GetItem(t, 0);
+                    PyObject *pA1 = PyTuple_GetItem(t, 1);
+                    headers << (char*)PyString_AsString(pA0) << ": " << (char*)PyString_AsString(pA1) << "\r\n";
                 }
             }
 
@@ -218,6 +220,7 @@ namespace fp {
 
         py->createThreadState(t);
         sro = py->newSRObject();
+        pCallback = py->getCallback();
     }
     
     handler::~handler() {
@@ -249,10 +252,8 @@ namespace fp {
     }
         
     int handler::runModule() {
-        PyObject *pReturn, *pCallback, *pArgs = NULL, *pEnviron = NULL;
+        PyObject *pReturn, *pArgs = NULL, *pEnviron = NULL;
         char *pOutput;
-        
-        pCallback = py->getCallback();
         
         if (pCallback == NULL)
             return -1;
