@@ -32,7 +32,12 @@ namespace fp {
         FCGX_Request *r;
         fastcgi *f;
     };    
-            
+
+    struct FastStreamObject {
+        PyObject_HEAD
+        FCGX_Stream *s;
+    };    
+    
     // python engine and manipulators only
     class pyengine: config {
     public:
@@ -54,8 +59,10 @@ namespace fp {
         inline PyObject *getCallback() {return pFunc;};
         int releaseCallback();
 
-        // Additional pyobjects routines
+        // start response object routines
         StartResponseObject *newSRObject();
+        
+        // fast stream object routines
         
     private:
         static PyThreadState *mainThreadState;

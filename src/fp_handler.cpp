@@ -110,6 +110,7 @@ namespace fp {
         
         // if pModule was imported prperly we will be able to continue
         if (pModule == NULL) {
+            PyErr_Print();
             return -1;
         }
         
@@ -119,11 +120,11 @@ namespace fp {
         if (pFunc == NULL || !PyCallable_Check(pFunc)) {
             Py_XDECREF(pFunc);
             Py_DECREF(pModule);
+            PyErr_Print();
             return -2;
         }
         
         cbr_flag = true;
-        
         return 0;
     }
 
@@ -336,8 +337,7 @@ namespace fp {
     }
                 
     int handler::initArgs(PyObject *dict) {
-        // TODO: maybe it has sense to replace it ? 
-
+        // environ translator from python-fastcgi c wrapper
         for (char **e = req->envp; *e != NULL; e++) {
             PyObject *k, *v;
             char *p = strchr(*e, '=');
@@ -361,6 +361,13 @@ namespace fp {
             Py_DECREF(k);
             Py_DECREF(v);
         }
+        
+        // standart wsgi attributes
+        PyObject * wsgiVersion = PyTuple_New(2);
+        PyTuple_SetItem(wsgiVersion, 0, PyInt_FromLong(1));
+        PyTuple_SetItem(wsgiVersion, 1, PyInt_FromLong(0));
+        PyDict_SetItemString(dict, "wsgi.version", wsgiVersion);
+        Py_DECREF(wsgiVersion);
         
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
