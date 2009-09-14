@@ -183,7 +183,7 @@ namespace fp {
                 return PyBool_FromLong(0);
             }
             
-            if (!PyList_Check(pHA)) {
+            if (!PyString_Check(pRC)||!PyList_Check(pHA)) {
                 s->f->error500(s->r, (char*)"args error");
                 return PyBool_FromLong(0);
             }
