@@ -25,6 +25,8 @@ namespace fp {
         int max_conn;
         int workers_cnt;
         int workers_ttl;
+        
+        bool accept_mt;
     };
     
     struct env_t {

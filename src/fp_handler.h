@@ -85,6 +85,7 @@ namespace fp {
         FCGX_Request *req;
         
         thread_t t;
+        StartResponseObject *sro;
         
         int runModule();
                 

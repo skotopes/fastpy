@@ -93,6 +93,12 @@ namespace fp {
                             
                         } else if (key.compare("group") == 0) {
                             
+                        } else if (key.compare("accept_mutex") == 0) {
+                            if (val.compare("on") == 0) {
+                                cnf.accept_mt = true;
+                            } else {
+                                cnf.accept_mt = false;
+                            }
                         }
                     } else if (group.compare("environment") == 0) {
                         if (key.compare("wsgi_path") == 0) {

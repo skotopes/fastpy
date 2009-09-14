@@ -200,6 +200,7 @@ namespace fp {
         req = r;
 
         py->createThreadState(t);
+        sro = py->newSRObject();
     }
     
     handler::~handler() {
@@ -250,20 +251,20 @@ namespace fp {
         if (initArgs(pEnviron) < 0)
             return -1;
         
-        StartResponseObject *sro = py->newSRObject();
-        
         if (sro == NULL) {
             return -1;
         }
         
         sro->r = req;
         sro->f = fcgi;
+
         pArgs = PyTuple_Pack(2, pEnviron, sro);
+        Py_DECREF(pEnviron);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(pCallback, pArgs);
-        
-        releaseArgs(pEnviron);
+        releaseArgs(pArgs);
+        Py_DECREF(pEnviron);
         
         // in case if something goes wrong
         if (pReturn == NULL) {
@@ -321,15 +322,17 @@ namespace fp {
                 
     int handler::initArgs(PyObject *dict) {
         // TODO: maybe it has sense to replace it ? 
-        PyDict_SetItem(dict, PyString_FromString("wsgi.multiprocess"), PyBool_FromLong(1));
-        PyDict_SetItem(dict, PyString_FromString("wsgi.multithread"), PyBool_FromLong(1));
-        PyDict_SetItem(dict, PyString_FromString("wsgi.run_once"), PyBool_FromLong(0));
-        PyDict_SetItem(dict, PyString_FromString("FASTPY_TC_NUMBER"), PyInt_FromLong(t.tc_number));
 
+        PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
+        PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
+        PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
+        PyDict_SetItemString(dict, "FASTPY_TC_NUMBER", PyInt_FromLong(t.tc_number));
+        
         return 0;
     }
     
     int handler::releaseArgs(PyObject *dict) {
+        PyDict_Clear(dict);
         Py_XDECREF(dict);
         return 0;
     }

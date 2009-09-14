@@ -42,9 +42,9 @@ namespace fp {
     int fastcgi::acceptRequest(FCGX_Request *request) {
         int rc;
         
-        pthread_mutex_lock(&accept_mutex);
+        if (cnf.accept_mt) pthread_mutex_lock(&accept_mutex);
         rc = FCGX_Accept_r(request);
-        pthread_mutex_unlock(&accept_mutex);
+        if (cnf.accept_mt) pthread_mutex_unlock(&accept_mutex);
         
         return rc;
     }
