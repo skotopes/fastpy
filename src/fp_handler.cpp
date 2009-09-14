@@ -338,6 +338,30 @@ namespace fp {
     int handler::initArgs(PyObject *dict) {
         // TODO: maybe it has sense to replace it ? 
 
+        for (char **e = req->envp; *e != NULL; e++) {
+            PyObject *k, *v;
+            char *p = strchr(*e, '=');
+            if (p == NULL)
+                continue;
+            k = PyString_FromStringAndSize(*e, (int)(p-*e));
+            if (k == NULL) {
+                PyErr_Clear();
+                continue;
+            }
+            v = PyString_FromString(p + 1);
+            if (v == NULL) {
+                PyErr_Clear();
+                Py_DECREF(k);
+                continue;
+            }
+            
+            if (PyDict_SetItem(dict, k, v) != 0)
+                PyErr_Clear();
+            
+            Py_DECREF(k);
+            Py_DECREF(v);
+        }
+        
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
