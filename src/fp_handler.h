@@ -11,10 +11,42 @@
 #define FP_HANDLER_H
 
 #include <Python.h>
+#include <structmember.h>
 #include <sstream>
 
 #include "fp_config.h"
 #include "fp_fastcgi.h"
+
+/* 
+ * fast stream code based on Cody Pisto python-fastcgi
+ * mostly it`s old python file object code, 
+ * TODO: MUST BE REPLACED IN FUTURE
+ */
+
+#define BUF(v) PyString_AS_STRING((PyStringObject *)v)
+
+#if BUFSIZ < 8192
+    #define SMALLCHUNK 8192
+#else
+    #define SMALLCHUNK BUFSIZ
+#endif
+
+#if SIZEOF_INT < 4
+    #define BIGCHUNK  (512 * 32)
+#else
+    #define BIGCHUNK  (512 * 1024)
+#endif
+
+#define fcgi_Stream_zero(_s) \
+    if (_s != NULL) { \
+    _s->s = NULL; \
+}
+
+#define fcgi_Stream_Check() \
+    if (self->s == NULL || *(self->s) == NULL) { \
+        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file"); \
+    return NULL; \
+}
 
 namespace fp {
 
@@ -35,7 +67,7 @@ namespace fp {
 
     struct FastStreamObject {
         PyObject_HEAD
-        FCGX_Stream *s;
+        FCGX_Stream **s;
     };    
     
     // python engine and manipulators only
@@ -51,6 +83,7 @@ namespace fp {
         int deleteThreadState(thread_t &t);
         
         // helpers
+        int typeInit();
         int setPath();
         
         // wsgi callback module routines
@@ -61,8 +94,9 @@ namespace fp {
 
         // start response object routines
         StartResponseObject *newSRObject();
-        
+
         // fast stream object routines
+        FastStreamObject *newFSObject();
         
     private:
         static PyThreadState *mainThreadState;
@@ -76,6 +110,23 @@ namespace fp {
         // start_response
         static PyTypeObject StartResponseType;
         static PyObject *startResponse(PyObject *self, PyObject *args, PyObject *kw);
+        
+        // fast_stream
+        static PyTypeObject FastStreamType;
+        static PyMemberDef FastStreamMembers[];
+        static PyMethodDef FastStreamMethods[];
+        static size_t new_buffersize(size_t currentsize);
+        static PyObject *fcgi_Stream_read(FastStreamObject *self, PyObject *args);
+        static PyObject *get_line(FastStreamObject *self, long bytesrequested);
+        static PyObject *fcgi_Stream_readline(FastStreamObject *self, PyObject *args);
+        static PyObject *fcgi_Stream_readlines(FastStreamObject *self, PyObject *args);
+        static PyObject *fcgi_Stream_getiter(FastStreamObject *self);
+        static PyObject *fcgi_Stream_iternext(FastStreamObject *self);
+        static PyObject *fcgi_Stream_write(FastStreamObject *self, PyObject *args);
+        static PyObject *fcgi_Stream_writelines(FastStreamObject *self, PyObject *seq);
+        static PyObject *fcgi_Stream_flush(FastStreamObject *self);
+        static void fcgi_Stream_dealloc(FastStreamObject *self);
+        static PyObject *fcgi_Stream_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
     };
     
     /* ================================ handler */
@@ -93,7 +144,9 @@ namespace fp {
         FCGX_Request *req;
         
         thread_t t;
-        StartResponseObject *sro;
+        StartResponseObject *pSro;
+        FastStreamObject *pInput;
+        FastStreamObject *pErrors;
         PyObject *pCallback;
         
         int runModule();

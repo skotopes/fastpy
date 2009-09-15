@@ -26,9 +26,10 @@ namespace fp {
     int worker::acceptor() {
         FCGX_Request *r;
         
-        // Init request and handler
+        // Init request and handler        
         r = new FCGX_Request;
         fcgi->initRequest(r);
+        
         handler h(fcgi, r);
         
         // run loop
@@ -51,6 +52,22 @@ namespace fp {
     }
     
     int worker::startWorker() {
+        // init types
+        if (py->typeInit() < 0) {
+            std::cout << "type initialization error\r\n";
+            return -1;
+        }
+        
+        if (py->setPath() < 0) {
+            std::cout << "path change error\r\n";
+            return -1;
+        } 
+        
+        if (py->initCallback() < 0) {
+            std::cout << "callback initialization error\r\n";
+            return -1;
+        }
+
         // calculate how much threads we need and reserv space for all of them
         int wnt = cnf.max_conn / cnf.workers_cnt;
         threads.reserve(wnt);
@@ -76,7 +93,9 @@ namespace fp {
         for (t_it = threads.begin(); t_it < threads.end(); t_it++) {
             pthread_join((*t_it), NULL);
         }
-        
+
+        py->releaseCallback();
+
         return 0;
     }
         
