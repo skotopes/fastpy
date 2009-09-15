@@ -32,6 +32,7 @@ namespace fp {
     }
 
     int fastcgi::initAcceptMutex() {
+        accept_mutex = new pthread_mutex_t;
         pthread_mutex_init(accept_mutex, NULL);
     }
     
