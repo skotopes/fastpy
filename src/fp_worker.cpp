@@ -13,6 +13,7 @@ namespace fp {
     
     worker::worker(fastcgi *fc) {
         fcgi = fc;
+        fc->initAcceptMutex();
         
         py = new pyengine();
         
