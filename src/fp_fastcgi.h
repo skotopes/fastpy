@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <fcgiapp.h>
 #include <fcgio.h>
+#include <string.h>
 
 #include "fp_config.h"
 
