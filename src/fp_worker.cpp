@@ -3,7 +3,7 @@
  *  fastJs
  *
  *  Created by Alexandr Kutuzov on 02.09.09.
- *  Copyright 2009 __MyCompanyName__. All rights reserved.
+ *  Copyright 2009 White-label ltd. All rights reserved.
  *
  */
 
@@ -13,16 +13,19 @@ namespace fp {
     
     worker::worker(fastcgi *fc) {
         fcgi = fc;
+        // accept mutex not yet ready we need to init
         fc->initAcceptMutex();
         
+        // 1 worker - 1 python interpritator
         py = new pyengine();
         
-        // create joinable threads
+        // init joinable threads
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);    
     }
     
     worker::~worker() {
+        
     }
     
     int worker::acceptor() {

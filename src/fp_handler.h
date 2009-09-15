@@ -3,7 +3,7 @@
  *  fastPy
  *
  *  Created by Alexandr Kutuzov on 06.09.09.
- *  Copyright 2009 __MyCompanyName__. All rights reserved.
+ *  Copyright 2009 White-label ltd. All rights reserved.
  *
  */
 
