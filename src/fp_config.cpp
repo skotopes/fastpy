@@ -100,7 +100,7 @@ namespace fp {
                                 cnf.accept_mt = false;
                             }
                         }
-                    } else if (group.compare("environment") == 0) {
+                    } else if (group.compare("wsgi") == 0) {
                         if (key.compare("wsgi_path") == 0) {
                             env.base_dir = val;
                         } else if (key.compare("wsgi_script") == 0) {
@@ -108,6 +108,8 @@ namespace fp {
                         } else if (key.compare("wsgi_handler") == 0) {
                             env.point = val;
                         }
+                    } else if (group.compare("environment") == 0) {
+
                     } else {
                         printLine("Config error: i don`t know what do you want from me");
                         return -1;

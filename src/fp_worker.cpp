@@ -13,6 +13,7 @@ namespace fp {
     
     worker::worker(fastcgi *fc) {
         fcgi = fc;
+        
         py = new pyengine();
         
         // create joinable threads

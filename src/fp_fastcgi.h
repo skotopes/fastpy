@@ -24,6 +24,7 @@ namespace fp {
         ~fastcgi();
         
         int openSock(char *socket);
+        int initAcceptMutex();
         int initRequest(FCGX_Request *request);
         int acceptRequest(FCGX_Request *request);
         int writeResponse(FCGX_Request *request, char *output);
@@ -34,7 +35,7 @@ namespace fp {
     private:
         static int fd;
         static bool inited;
-        static pthread_mutex_t accept_mutex;
+        pthread_mutex_t *accept_mutex;
 
     };
 }

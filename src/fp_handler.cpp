@@ -711,11 +711,11 @@ namespace fp {
         pInput = py->newFSObject();
         pErrors = py->newFSObject();
         pCallback = py->getCallback();
-
+        /*
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
         Py_INCREF(pSro);
-        
+         */
         pInput->s = &req->in;
         pErrors->s = &req->err;
     }
