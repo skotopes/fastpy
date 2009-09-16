@@ -189,6 +189,10 @@ namespace fp {
         StartResponseObject *s = (StartResponseObject*)self;
         int rSize = PyTuple_Size(args);
         
+        if ( s->h->is_filled == true) {
+            PyErr_SetString(PyExc_StandardError, "Headers already set");
+        }
+        
         if (rSize == 2) {
             PyObject *pRC, *pHA;
             pRC = PyTuple_GetItem(args, 0); 
