@@ -726,11 +726,11 @@ namespace fp {
         
         pCallback = py->getCallback();
         py->nullAndUnlockTC(t);
-        /*
+
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
         Py_INCREF(pSro);
-         */
+
         pInput->s = &req->in;
         pErrors->s = &req->err;
     }

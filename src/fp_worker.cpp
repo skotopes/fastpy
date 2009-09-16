@@ -13,8 +13,6 @@ namespace fp {
     
     worker::worker(fastcgi *fc) {
         fcgi = fc;
-        // accept mutex not yet ready we need to init
-        fc->initAcceptMutex();
         
         // 1 worker - 1 python interpritator
         py = new pyengine();
@@ -43,8 +41,10 @@ namespace fp {
             int rc = fcgi->acceptRequest(r);
             
             // in case if some shit happens
-            if (rc < 0)
-                break;
+            if (rc < 0) {
+                continue;
+                //break;
+            }
             
             // procced request with handler
             h.proceedRequest();
