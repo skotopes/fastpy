@@ -713,10 +713,19 @@ namespace fp {
         req = r;
 
         py->createThreadState(t);
+        py->switchAndLockTC(t);
+
         pSro = py->newSRObject();
         pInput = py->newFSObject();
         pErrors = py->newFSObject();
+
+        if (py->initCallback() < 0) {
+            std::cout << "callback initialization error\r\n";
+            //            return -1;
+        }
+        
         pCallback = py->getCallback();
+        py->nullAndUnlockTC(t);
         /*
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
@@ -737,9 +746,9 @@ namespace fp {
             int ec = runModule();
             
             if (ec < 0) {
+                PyErr_Print();
                 // thread state not clean
                 py->nullAndUnlockTC(t);
-
                 std::stringstream e;
                 e << "Handler execution failed with error code: "<< ec;
                 fcgi->error500(req, e.str());

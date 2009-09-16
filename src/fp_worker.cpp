@@ -68,11 +68,6 @@ namespace fp {
             return -1;
         } 
         
-        if (py->initCallback() < 0) {
-            std::cout << "callback initialization error\r\n";
-            return -1;
-        }
-
         // calculate how much threads we need and reserv space for all of them
         int wnt = cnf.max_conn / cnf.workers_cnt;
         threads.reserve(wnt);
