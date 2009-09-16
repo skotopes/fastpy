@@ -62,8 +62,8 @@ namespace fp {
         return 0;
     }    
 
-    int fastcgi::writeResponse(FCGX_Request *request, char *output) {
-        FCGX_PutStr(output, strlen(output), request->out);
+    int fastcgi::writeResponse(FCGX_Request *request, std::string output) {
+        FCGX_PutStr(output.c_str(), output.size(), request->out);
         return 0;
     }        
     

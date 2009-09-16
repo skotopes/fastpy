@@ -187,7 +187,6 @@ namespace fp {
     PyObject *pyengine::startResponse(PyObject *self, PyObject *args, PyObject *kw) {
         std::stringstream status, headers;
         StartResponseObject *s = (StartResponseObject*)self;
-        
         int rSize = PyTuple_Size(args);
         
         if (rSize == 2) {
@@ -196,18 +195,17 @@ namespace fp {
             pHA = PyTuple_GetItem(args, 1);
                         
             if (pRC == NULL || pHA == NULL) {
-                s->f->writeResponse(s->r, (char*)"500 null pointer in start response");
-                return PyBool_FromLong(0);
+                PyErr_SetString(PyExc_TypeError, "NULL pointer arguments passed to start_response");
             }
             
             if (!PyString_Check(pRC)||!PyList_Check(pHA)) {
-                s->f->error500(s->r, (char*)"args error");
-                return PyBool_FromLong(0);
+                PyErr_SetString(PyExc_TypeError, "Wrong arguments passed to start_response(string and list expected)");
             }
 
             status << "Status: " << (char*)PyString_AsString(pRC) << "\r\n";
-            s->f->writeResponse(s->r, (char*)status.str().c_str());
 
+            s->h->status_code = status.str();
+            
             for (int i=0; i<PyList_Size(pHA); i++) {
                 PyObject *t= PyList_GetItem(pHA, i);
                 if (PyTuple_Check(t) && PyTuple_Size(t) == 2) {
@@ -216,16 +214,18 @@ namespace fp {
                     headers << (char*)PyString_AsString(pA0) << ": " << (char*)PyString_AsString(pA1) << "\r\n";
                 }
             }
-
-            s->f->writeResponse(s->r, (char*)headers.str().c_str());
-            s->f->writeResponse(s->r, (char *)"\r\n");
+            
+            headers << "\r\n";
+            s->h->headers_set = headers.str();
         } else {
             // throw python exception
             PyObject_Print(args, stdout, Py_PRINT_RAW);
             std::cout << rSize << std::endl;
-            s->f->writeResponse(s->r, (char*)"args error");
+            PyErr_SetString(PyExc_TypeError, "Wrong arguments count passed to start_response");
         }
 
+        s->h->is_filled = true;
+        
         return PyBool_FromLong(1);
     };    
 
@@ -724,24 +724,29 @@ namespace fp {
         py->deleteThreadState(t);
     }
     
-    int handler::proceedRequest() {
-        // switch thread context
-        py->switchAndLockTC(t);
-        
-        if (py->isCallbackReady()) {            
-            if (runModule() < 0) {
-                PyErr_Print();
-                fcgi->error500(req, "Handler fucked up");
-            }
+    int handler::proceedRequest() {        
+        if (py->isCallbackReady()) {
+
+            // switch thread context
+            py->switchAndLockTC(t);
+
+            // calling wsgi callback
+            int ec = runModule();
             
+            // switch thread context to null, execution finished
+            py->nullAndUnlockTC(t);
+            
+            if (ec < 0) {
+                std::stringstream e;
+                e << "Handler execution failed with error code: "<< ec;
+                fcgi->error500(req, e.str());
+            }
         } else {
-            PyErr_Print();
-            fcgi->error500(req, "Handler init fail");
+            std::stringstream e;
+            e << "Unable to initialize handler";
+            fcgi->error500(req, e.str());
         }
-        
-        // switch thread context to null, execution finished
-        py->nullAndUnlockTC(t);
-        
+                
         // finishing request
         fcgi->finishRequest(req);
 
@@ -751,6 +756,11 @@ namespace fp {
     int handler::runModule() {
         PyObject *pReturn, *pArgs = NULL, *pEnviron = NULL;
         char *pOutput;
+        headers_t h;
+        std::stringstream r;
+
+        h.is_filled = false;
+        h.is_sended = false;
         
         if (pCallback == NULL)
             return -1;
@@ -758,29 +768,29 @@ namespace fp {
         pEnviron = PyDict_New();
         
         if (pEnviron == NULL)
-            return -1;
+            return -2;
         
         if (initArgs(pEnviron) < 0)
-            return -1;
+            return -3;
         
         if (pSro == NULL) {
-            return -1;
+            return -4;
         }
         
-        pSro->r = req;
-        pSro->f = fcgi;
-
+        pSro->h = &h;
+        
         pArgs = PyTuple_Pack(2, pEnviron, pSro);
         Py_DECREF(pEnviron);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(pCallback, pArgs);
+        
         releaseArgs(pArgs);
         Py_DECREF(pEnviron);
         
         // in case if something goes wrong
         if (pReturn == NULL) {
-            return -1;
+            return -5;
         }
 
         // checking call result
@@ -794,7 +804,7 @@ namespace fp {
                 // Check if returned object is string
                 if (!PyString_Check(sSobj)) {
                     Py_DECREF(pReturn);
-                    return -3;                    
+                    return -6;
                 }
                 
                 // get char array
@@ -803,11 +813,10 @@ namespace fp {
                 // stringToChar failed, freeing result and return to main cycle
                 if (pOutput == NULL) {
                     Py_DECREF(pReturn);
-                    return -3;
+                    return -7;
                 }
                 
-                // TODO: PEP333 probably we on the right way, but we should check if headers is sent 
-                fcgi->writeResponse(req, pOutput);
+                r << pOutput;
             }
         } else if (PyString_Check(pReturn)) {
             // get char array
@@ -816,22 +825,44 @@ namespace fp {
             // stringToChar failed, freeing result and return to main cycle
             if (pOutput == NULL) {
                 Py_DECREF(pReturn);
-                return -4;
+                return -8;
             }
             
-            fcgi->writeResponse(req, pOutput);
+            r << pOutput;
         } else {
             // returned object of incompatible type, finish him.
             Py_DECREF(pReturn);
-            return -2;
+            return -9;
         }
         
         // if everything fine we can decriment reference count
         Py_DECREF(pReturn);
         
+        // now sending response
+        sendHeaders(h);
+        fcgi->writeResponse(req, r.str());
+
         return 0;
     }
-                
+
+    int handler::sendHeaders(headers_t &h) {
+        
+        if (h.is_sended) {
+            return 1;
+        }
+        
+        if (!h.is_filled) {
+            return -1;
+        }
+        
+        // now we can send headers
+        fcgi->writeResponse(req, (char *)h.status_code.c_str());
+        fcgi->writeResponse(req, (char *)h.headers_set.c_str());
+        h.is_sended = true;
+        
+        return 0;
+    }
+    
     int handler::initArgs(PyObject *dict) {
         // environ translator from python-fastcgi c wrapper
         for (char **e = req->envp; *e != NULL; e++) {

@@ -58,11 +58,17 @@ namespace fp {
         long tc_number;
         bool in_use;
     };
-        
+    
+    struct headers_t {
+        std::string status_code;
+        std::string headers_set;
+        bool is_filled;
+        bool is_sended;
+    };
+    
     struct StartResponseObject {
         PyObject_HEAD
-        FCGX_Request *r;
-        fastcgi *f;
+        headers_t *h;
     };    
 
     struct FastStreamObject {
@@ -150,7 +156,8 @@ namespace fp {
         PyObject *pCallback;
         
         int runModule();
-                
+
+        int sendHeaders(headers_t &h);
         int initArgs(PyObject *dict);
         int releaseArgs(PyObject *dict);
         
