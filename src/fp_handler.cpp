@@ -54,10 +54,12 @@ namespace fp {
     }
     
     int pyengine::nullAndUnlockTC(thread_t &t) {
-        PyThreadState_Swap(NULL);
-        PyEval_ReleaseLock();
-        t.in_use = false;
-        
+        if (t.in_use) {
+            PyThreadState_Swap(NULL);
+            PyEval_ReleaseLock();
+            t.in_use = false;            
+        }
+
         return 0;
     }
     
@@ -731,16 +733,13 @@ namespace fp {
     int handler::proceedRequest() {        
         if (py->isCallbackReady()) {
 
-            // switch thread context
-            py->switchAndLockTC(t);
-
             // calling wsgi callback
             int ec = runModule();
             
-            // switch thread context to null, execution finished
-            py->nullAndUnlockTC(t);
-            
             if (ec < 0) {
+                // thread state not clean
+                py->nullAndUnlockTC(t);
+
                 std::stringstream e;
                 e << "Handler execution failed with error code: "<< ec;
                 fcgi->error500(req, e.str());
@@ -768,6 +767,9 @@ namespace fp {
         
         if (pCallback == NULL)
             return -1;
+        
+        // From this point we have to know in wich thread state we want to put env
+        py->switchAndLockTC(t);
         
         pEnviron = PyDict_New();
         
@@ -841,7 +843,10 @@ namespace fp {
         
         // if everything fine we can decriment reference count
         Py_DECREF(pReturn);
-        
+
+        // switch thread context to null, execution finished
+        py->nullAndUnlockTC(t);
+
         // now sending response
         sendHeaders(h);
         fcgi->writeResponse(req, r.str());
