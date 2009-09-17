@@ -1,6 +1,6 @@
 /*
  *  fp_config.h
- *  fastJs
+ *  fastPy
  *
  *  Created by Alexandr Kutuzov on 02.09.09.
  *  Copyright 2009 White-label ltd. All rights reserved.

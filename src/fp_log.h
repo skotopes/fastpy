@@ -1,6 +1,6 @@
 /*
  *  fp_log.h
- *  fastJs
+ *  fastPy
  *
  *  Created by Alexandr Kutuzov on 02.09.09.
  *  Copyright 2009 White-label ltd. All rights reserved.
@@ -21,9 +21,10 @@ namespace fp {
         ~log();
 
         int logError(std::string s);
+        int openLogs(std::string a_log, std::string e_log);
         
     private:
-        
+        static bool log_opened;
     };
 }
 

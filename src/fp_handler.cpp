@@ -126,6 +126,7 @@ namespace fp {
         }
         
         cbr_flag = true;
+        
         return 0;
     }
 
@@ -809,7 +810,52 @@ namespace fp {
         }
 
         // checking call result
-        if (PyList_Check(pReturn)) {
+        if (PyString_Check(pReturn)) {
+            // get char array
+            pOutput = PyString_AsString(pReturn);
+            
+            // stringToChar failed, freeing result and return to main cycle
+            if (pOutput == NULL) {
+                Py_DECREF(pReturn);
+                return -9;
+            }
+            
+            r << pOutput;
+        } else if (PyIter_Check(pReturn)) {
+            PyObject *pIter = PyObject_GetIter(pReturn);
+            PyObject *pItem;
+            
+            if (pIter == NULL) {
+                return -6;
+            }
+            
+            while ((pItem = PyIter_Next(pIter))) {
+                // checking that this shit is a string
+                if (!PyString_Check(pItem)) {
+                    Py_DECREF(pItem);
+                    Py_DECREF(pReturn);
+                    return -7;
+                }
+                
+                // get char array
+                pOutput = PyString_AsString(pItem);
+                Py_DECREF(pItem);
+                
+                // stringToChar failed, freeing result and return to main cycle
+                if (pOutput == NULL) {
+                    Py_DECREF(pReturn);
+                    return -8;
+                }
+                
+                r << pOutput;
+            }
+            
+            Py_DECREF(pIter);
+            
+            if (PyErr_Occurred()) {
+                return -9;
+            }
+        } else if (PyList_Check(pReturn)) {
             int rSize = PyList_Size(pReturn);
             
             for (int i=0; i<rSize; i++) {
@@ -819,7 +865,7 @@ namespace fp {
                 // Check if returned object is string
                 if (!PyString_Check(sSobj)) {
                     Py_DECREF(pReturn);
-                    return -6;
+                    return -10;
                 }
                 
                 // get char array
@@ -828,26 +874,15 @@ namespace fp {
                 // stringToChar failed, freeing result and return to main cycle
                 if (pOutput == NULL) {
                     Py_DECREF(pReturn);
-                    return -7;
+                    return -11;
                 }
                 
                 r << pOutput;
             }
-        } else if (PyString_Check(pReturn)) {
-            // get char array
-            pOutput = PyString_AsString(pReturn);
-            
-            // stringToChar failed, freeing result and return to main cycle
-            if (pOutput == NULL) {
-                Py_DECREF(pReturn);
-                return -8;
-            }
-            
-            r << pOutput;
         } else {
             // returned object of incompatible type, finish him.
             Py_DECREF(pReturn);
-            return -9;
+            return -12;
         }
         
         // if everything fine we can decriment reference count
@@ -856,8 +891,13 @@ namespace fp {
         // switch thread context to null, execution finished
         py->nullAndUnlockTC(t);
 
-        // now sending response
-        sendHeaders(h);
+        // now sending headers and response 
+        if (sendHeaders(h) < 0) {
+            // probably headers not set
+            return -13;
+        }
+            
+        // looks like everything is ok and now we can send body
         fcgi->writeResponse(req, r.str());
 
         return 0;

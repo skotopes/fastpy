@@ -1,6 +1,6 @@
 /*
  *  fp_worker.h
- *  fastJs
+ *  fastPy
  *
  *  Created by Alexandr Kutuzov on 02.09.09.
  *  Copyright 2009 White-label ltd. All rights reserved.
@@ -37,10 +37,12 @@ namespace fp {
         
         pthread_attr_t attr;
         std::vector<pthread_t> threads;
+        static bool able_to_work;
 
         int acceptor();
         
         static void *workerThread(void *data);
+        static void sigHandler(int sig_type);
     };
 }
 

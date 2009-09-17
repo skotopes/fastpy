@@ -1,6 +1,6 @@
 /*
  *  fastjs.cpp
- *  fastJs
+ *  fastPy
  *
  *  Created by Alexandr Kutuzov on 02.09.09.
  *  Copyright 2009 White-label ltd. All rights reserved.
@@ -11,17 +11,17 @@
 
 namespace fp {
     
-    fastJs::fastJs() {
+    fastPy::fastPy() {
         config_f = NULL;
         sock_f = NULL;
         detach = false;
     }
     
-    fastJs::~fastJs() {
+    fastPy::~fastPy() {
         
     }
     
-    int fastJs::go(int argc, char **argv) {
+    int fastPy::go(int argc, char **argv) {
         int c;
         
         app_name = argv[0];
@@ -32,9 +32,7 @@ namespace fp {
                     detach = true;
                     break;                    
                 case 'v':
-                    if (verbose) {
-                        debug = true;
-                    }
+                    if (verbose) debug = true;
                     verbose = true;
                     break;
                 case 'c':
@@ -65,7 +63,7 @@ namespace fp {
         return ec;
     }
     
-    int fastJs::runFPy() {
+    int fastPy::runFPy() {
         fcgi = new fastcgi;
         
         // opening socket
@@ -77,7 +75,7 @@ namespace fp {
             // forking and working
             for (int i=0; i < cnf.workers_cnt; i++) {
                 createChild();
-            }            
+            }
         } else {
             worker w(fcgi);
             w.startWorker();
@@ -88,7 +86,7 @@ namespace fp {
     }
     
 
-    int fastJs::createChild() {
+    int fastPy::createChild() {
         int fpid = fork();
         
         if (fpid == 0) {
@@ -101,7 +99,7 @@ namespace fp {
             exit(0);                
         } else if (fpid > 0){
             // lions and tigers
-            // simplu returning back
+            
         } else {
             return -1;
         }
@@ -109,16 +107,24 @@ namespace fp {
         return 0;
     }
     
-    int fastJs::yesMaster() {
+    int fastPy::yesMaster() {
+        bool do_exit = false;
         
-        while (true) {
+        // registering signal handler
+        signal(SIGHUP, sig_handler);
+        signal(SIGINT, sig_handler);
+        signal(SIGTERM, sig_handler);
+        signal(SIGUSR1, sig_handler);
+        signal(SIGUSR2, sig_handler);        
+        
+        while (!do_exit) {
             
         }
         
         return 0;
     }
     
-    void fastJs::usage() {
+    void fastPy::usage() {
         std::cout << "Usage:"<< std::endl
             << "fastpy OPTIONS"<< std::endl
             << std::endl
@@ -129,11 +135,17 @@ namespace fp {
             << "-h \t\t- help"<< std::endl
             << "-v \t\t- verbose output(more v - more verbose)"<< std::endl;
     }
+
+    void fastPy::sig_handler(int s) {
+        std::cout << "Got signal" << s << std::endl;
+        exit(1);
+    }
+    
 }
 
 using namespace fp;
 
 int main(int argc, char *argv[]){   
-    fastJs fps;    
+    fastPy fps;    
     return fps.go(argc, argv);
 }
