@@ -18,12 +18,11 @@ namespace fp {
     
     pyengine::pyengine() {
         // initialize python threading environment
-        
+        Py_SetProgramName(app_name);
         Py_InitializeEx(0);
         PyEval_InitThreads();
         mainThreadState = PyThreadState_Get();
         PyEval_ReleaseLock();
-        Py_SetProgramName(app_name);
     }
     
     pyengine::~pyengine() {
@@ -55,7 +54,7 @@ namespace fp {
     
     int pyengine::nullAndUnlockTC(thread_t &t) {
         if (t.in_use) {
-            PyThreadState_Swap(NULL);
+            t.workerThreadState = PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
             t.in_use = false;            
         }
@@ -124,7 +123,7 @@ namespace fp {
             PyErr_Print();
             return -2;
         }
-        
+                
         cbr_flag = true;
         
         return 0;
@@ -839,7 +838,6 @@ namespace fp {
                 
                 // get char array
                 pOutput = PyString_AsString(pItem);
-                Py_DECREF(pItem);
                 
                 // stringToChar failed, freeing result and return to main cycle
                 if (pOutput == NULL) {
@@ -848,6 +846,7 @@ namespace fp {
                 }
                 
                 r << pOutput;
+                Py_DECREF(pItem);
             }
             
             Py_DECREF(pIter);
@@ -878,6 +877,7 @@ namespace fp {
                 }
                 
                 r << pOutput;
+                Py_DECREF(sSobj);
             }
         } else {
             // returned object of incompatible type, finish him.
