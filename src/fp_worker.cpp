@@ -15,6 +15,7 @@ namespace fp {
 
     worker::worker(fastcgi *fc) {
         fcgi = fc;
+        fc->initAcceptMutex();
         
         // 1 worker - 1 python interpritator
         py = new pyengine();
@@ -22,7 +23,7 @@ namespace fp {
         // init joinable threads
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
+        
         signal(SIGHUP, sigHandler);
         signal(SIGINT, sigHandler);
         signal(SIGABRT, sigHandler);

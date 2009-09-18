@@ -12,7 +12,6 @@
 namespace fp {
     // some static stuff
     bool fastcgi::inited = false;
-    pthread_mutex_t fastcgi::accept_mutex;
     int fastcgi::fd;
 
     fastcgi::fastcgi() {
@@ -20,7 +19,6 @@ namespace fp {
         if (!inited) {
             // initialize fastcgi environment and open socket
             FCGX_Init();
-            pthread_mutex_init(&accept_mutex, NULL);
         }
     }
     
@@ -30,6 +28,12 @@ namespace fp {
     int fastcgi::openSock(char *socket) {
         fd = FCGX_OpenSocket(socket, 5000);
         
+        return 0;
+    }
+
+    int fastcgi::initAcceptMutex() {
+        accept_mutex = new pthread_mutex_t;
+        pthread_mutex_init(accept_mutex, NULL);
         return 0;
     }
     
@@ -43,9 +47,9 @@ namespace fp {
     int fastcgi::acceptRequest(FCGX_Request *request) {
         int rc;
         
-        if (cnf.accept_mt) pthread_mutex_lock(&accept_mutex);
+        if (cnf.accept_mt) pthread_mutex_lock(accept_mutex);
         rc = FCGX_Accept_r(request);
-        if (cnf.accept_mt) pthread_mutex_unlock(&accept_mutex);
+        if (cnf.accept_mt) pthread_mutex_unlock(accept_mutex);
         
         return rc;
     }
