@@ -14,6 +14,7 @@ namespace fp {
     /* ================================ python */
     
     PyThreadState *pyengine::mainThreadState = NULL;
+    PyThreadState *pyengine::serviceThreadState = NULL;
     long pyengine::tc_allocated = 0;
     
     pyengine::pyengine() {
@@ -22,13 +23,14 @@ namespace fp {
         Py_InitializeEx(0);
         PyEval_InitThreads();
         mainThreadState = PyThreadState_Get();
+        serviceThreadState = PyThreadState_New(mainThreadState->interp);
         PyEval_ReleaseLock();
     }
     
     pyengine::~pyengine() {
         // Destroying GIL and finalizing python interpritator
         PyEval_AcquireLock();
-        Py_Finalize();        
+        Py_Finalize();
     }
 
     int pyengine::createThreadState(thread_t &t) {
@@ -45,9 +47,11 @@ namespace fp {
     }
     
     int pyengine::switchAndLockTC(thread_t &t) {
-        PyEval_AcquireLock();
-        PyThreadState_Swap(t.workerThreadState);
-        t.in_use = true;
+        if (!t.in_use) {
+            PyEval_AcquireLock();
+            PyThreadState_Swap(t.workerThreadState);
+            t.in_use = true;            
+        }
         
         return 0;
     }
@@ -101,6 +105,10 @@ namespace fp {
     PyObject *pyengine::pFunc = NULL;
 
     int pyengine::initCallback() {
+        
+        PyEval_AcquireLock();
+        PyThreadState_Swap(serviceThreadState);
+
         // getting srcipt object
         PyObject *pScript = PyString_FromString(env.script.c_str());
         
@@ -125,14 +133,17 @@ namespace fp {
         }
                 
         cbr_flag = true;
-        
+
+        serviceThreadState = PyThreadState_Swap(NULL);
+        PyEval_ReleaseLock();
+
         return 0;
     }
 
     int pyengine::releaseCallback() {
         // cleanup handler
         Py_XDECREF(pFunc);
-        Py_DECREF(pModule);
+        Py_XDECREF(pModule);
         
         return 0;
     }
@@ -718,12 +729,6 @@ namespace fp {
         pSro = py->newSRObject();
         pInput = py->newFSObject();
         pErrors = py->newFSObject();
-
-        if (py->initCallback() < 0) {
-            std::cout << "callback initialization error\r\n";
-            //            return -1;
-        }
-        
         pCallback = py->getCallback();
         py->nullAndUnlockTC(t);
 
@@ -746,6 +751,7 @@ namespace fp {
             int ec = runModule();
             
             if (ec < 0) {
+                py->switchAndLockTC(t);
                 PyErr_Print();
                 // thread state not clean
                 py->nullAndUnlockTC(t);
@@ -807,7 +813,7 @@ namespace fp {
         if (pReturn == NULL) {
             return -5;
         }
-
+        
         // checking call result
         if (PyString_Check(pReturn)) {
             // get char array
@@ -844,16 +850,19 @@ namespace fp {
                     Py_DECREF(pReturn);
                     return -8;
                 }
+
+                if (sendHeaders(h) < 0) {
+                    // probably headers not set
+                    return -13;
+                }
                 
-                r << pOutput;
+                // looks like everything is ok and now we can send body
+                fcgi->writeResponse(req, pOutput);
+
                 Py_DECREF(pItem);
             }
             
             Py_DECREF(pIter);
-            
-            if (PyErr_Occurred()) {
-                return -9;
-            }
         } else if (PyList_Check(pReturn)) {
             int rSize = PyList_Size(pReturn);
             
@@ -884,11 +893,10 @@ namespace fp {
             Py_DECREF(pReturn);
             return -12;
         }
-        
+
         // if everything fine we can decriment reference count
         Py_DECREF(pReturn);
-
-        // switch thread context to null, execution finished
+        
         py->nullAndUnlockTC(t);
 
         // now sending headers and response 
@@ -896,7 +904,7 @@ namespace fp {
             // probably headers not set
             return -13;
         }
-            
+        
         // looks like everything is ok and now we can send body
         fcgi->writeResponse(req, r.str());
 

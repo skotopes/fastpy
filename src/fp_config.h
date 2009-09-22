@@ -21,9 +21,9 @@ namespace fp {
     struct conf_t {
         std::string user;
         std::string group;
-        
-        int max_conn;
+
         int workers_cnt;
+        int threads_cnt;
         int workers_ttl;
         
         bool accept_mt;

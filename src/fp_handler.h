@@ -106,6 +106,7 @@ namespace fp {
         
     private:
         static PyThreadState *mainThreadState;
+        static PyThreadState *serviceThreadState;
         static long tc_allocated;
 
         // wsgi call back

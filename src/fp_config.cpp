@@ -85,8 +85,8 @@ namespace fp {
                     trim(val);
                     
                     if (group.compare("server") == 0) {
-                        if (key.compare("max_connections") == 0) {
-                            cnf.max_conn = toInt(val);
+                        if (key.compare("threads") == 0) {
+                            cnf.threads_cnt = toInt(val);
                         } else if (key.compare("workers") == 0) {
                             cnf.workers_cnt = toInt(val);
                         } else if (key.compare("user") == 0) {

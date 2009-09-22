@@ -15,15 +15,13 @@ namespace fp {
 
     worker::worker(fastcgi *fc) {
         fcgi = fc;
-        fc->initAcceptMutex();
-        
-        // 1 worker - 1 python interpritator
         py = new pyengine();
         
         // init joinable threads
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        
+        pthread_mutex_init(&accept_mutex, NULL);
+
         signal(SIGHUP, sigHandler);
         signal(SIGINT, sigHandler);
         signal(SIGABRT, sigHandler);
@@ -31,22 +29,32 @@ namespace fp {
     }
     
     worker::~worker() {
-        
+        delete py;
     }
     
     int worker::acceptor() {
         FCGX_Request *r;
+        handler *h;
         
-        // Init request and handler        
+        // Init request and handler
         r = new FCGX_Request;
         fcgi->initRequest(r);
+        h = new handler(fcgi, r);
         
-        handler h(fcgi, r);
-        
-        // run loop
+        // accept loop
         while (able_to_work) {
+
+            pthread_mutex_lock(&accept_mutex);
+            
+            if (!able_to_work) {
+                pthread_mutex_unlock(&accept_mutex);
+                break;
+            }
+            
             // accepting connection
             int rc = fcgi->acceptRequest(r);
+            
+            pthread_mutex_unlock(&accept_mutex);
             
             // in case if some shit happens
             if (rc < 0) {
@@ -55,17 +63,17 @@ namespace fp {
             }
             
             // procced request with handler
-            h.proceedRequest();
+            h->proceedRequest();
         }
         
-        delete &h;
-        
+        delete h;
+
         // TODO check out condition
         return 0;
     }
     
     int worker::startWorker() {
-        // init types
+        // init types        
         if (py->typeInit() < 0) {
             std::cout << "type initialization error\r\n";
             return -1;
@@ -74,22 +82,30 @@ namespace fp {
         if (py->setPath() < 0) {
             std::cout << "path change error\r\n";
             return -1;
-        } 
-        
-        // calculate how much threads we need and reserv space for all of them
-        int wnt = cnf.max_conn / cnf.workers_cnt;
-        threads.reserve(wnt);
 
-        for (int i=0;i < wnt;i++) {
-            pthread_t thread;
+        } 
+        if (py->initCallback() < 0) {
+            std::cout << "callback initialization error\r\n";
+            return -1;
+        }              
+        
+        if (cnf.threads_cnt > 0) {
+            threads.reserve(cnf.threads_cnt);
             
-            int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
-            
-            if (ec) {
-                return -1;
+            for (int i=0;i < cnf.threads_cnt;i++) {
+                pthread_t thread;
+                
+                int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
+                
+                if (ec) {
+                    return -2;
+                }
+                
+                threads.push_back(thread);
             }
-            
-            threads.push_back(thread);            
+        } else {
+            std::cout << "Illigal thread count\r\n";
+            return -3;
         }
         
         return 0;
@@ -114,9 +130,9 @@ namespace fp {
     }
     
     void worker::sigHandler(int sig_type) {
-        //able_to_work = false;
+        able_to_work = false;
         std::cout << "Got signal, probably i should stop: "<< sig_type << std::endl;
                 
-        exit(1);
+        //exit(1);
     }
 }

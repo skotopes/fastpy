@@ -14,7 +14,6 @@
 // posix threads and vector
 #include <pthread.h>
 #include <vector>
-
 // core components
 #include "fp_log.h"
 #include "fp_config.h"
@@ -35,6 +34,7 @@ namespace fp {
         pyengine *py;
         fastcgi *fcgi;
         
+        pthread_mutex_t accept_mutex;
         pthread_attr_t attr;
         std::vector<pthread_t> threads;
         static bool able_to_work;

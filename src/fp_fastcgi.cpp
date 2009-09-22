@@ -30,12 +30,6 @@ namespace fp {
         
         return 0;
     }
-
-    int fastcgi::initAcceptMutex() {
-        accept_mutex = new pthread_mutex_t;
-        pthread_mutex_init(accept_mutex, NULL);
-        return 0;
-    }
     
     int fastcgi::initRequest(FCGX_Request *request) {
 
@@ -47,9 +41,7 @@ namespace fp {
     int fastcgi::acceptRequest(FCGX_Request *request) {
         int rc;
         
-        if (cnf.accept_mt) pthread_mutex_lock(accept_mutex);
         rc = FCGX_Accept_r(request);
-        if (cnf.accept_mt) pthread_mutex_unlock(accept_mutex);
         
         return rc;
     }
@@ -65,6 +57,11 @@ namespace fp {
 
     int fastcgi::writeResponse(FCGX_Request *request, std::string output) {
         FCGX_PutStr(output.c_str(), output.size(), request->out);
+        return 0;
+    }        
+
+    int fastcgi::writeResponse(FCGX_Request *request, char* output) {
+        FCGX_PutStr(output, strlen(output), request->out);
         return 0;
     }        
     
