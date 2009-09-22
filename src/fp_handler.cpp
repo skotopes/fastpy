@@ -754,8 +754,8 @@ namespace fp {
             if (ec < 0) {
                 py->switchAndLockTC(t);
                 PyErr_Print();
-                // thread state not clean
                 py->nullAndUnlockTC(t);
+                
                 std::stringstream e;
                 e << "Handler execution failed with error code: "<< ec;
                 fcgi->error500(req, e.str());
@@ -846,20 +846,24 @@ namespace fp {
                 // get char array
                 pOutput = PyString_AsString(pItem);
                 
+                Py_BEGIN_ALLOW_THREADS
                 // stringToChar failed, freeing result and return to main cycle
                 if (pOutput == NULL) {
+                    Py_BLOCK_THREADS
                     Py_DECREF(pReturn);
                     return -8;
                 }
 
                 if (sendHeaders(h) < 0) {
                     // probably headers not set
+                    Py_BLOCK_THREADS
                     return -13;
                 }
                 
                 // looks like everything is ok and now we can send body
                 fcgi->writeResponse(req, pOutput);
-
+                Py_END_ALLOW_THREADS
+                
                 Py_DECREF(pItem);
             }
             
@@ -897,7 +901,7 @@ namespace fp {
 
         // if everything fine we can decriment reference count
         Py_DECREF(pReturn);
-        
+
         py->nullAndUnlockTC(t);
 
         // now sending headers and response 
