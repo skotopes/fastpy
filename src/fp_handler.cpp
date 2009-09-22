@@ -38,10 +38,11 @@ namespace fp {
         PyEval_AcquireLock();
         t.mainInterpreterState = mainThreadState->interp;
         t.workerThreadState = PyThreadState_New(t.mainInterpreterState);
-        PyEval_ReleaseLock();
 
         tc_allocated ++;
         t.tc_number = tc_allocated;
+        t.in_use = false;        
+        PyEval_ReleaseLock();
         
         return 0;
     }
