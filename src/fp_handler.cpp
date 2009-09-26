@@ -83,10 +83,21 @@ namespace fp {
         const char* python_path = Py_GetPath();
         
         // Setting path for object
-        path_final = env.base_dir;
+        path_final = wsgi.base_dir;
         path_final += ":";
         path_final += python_path;
         PySys_SetPath((char*)path_final.c_str());
+        
+        if (wsgi.load_site) {
+            PyEval_AcquireLock();
+            PyThreadState_Swap(serviceThreadState);
+            // such a stupid shit, dunno why i should do it here
+            PyRun_SimpleString("import site\n"
+                               "site.main()\n");
+            
+            serviceThreadState = PyThreadState_Swap(NULL);
+            PyEval_ReleaseLock();
+        }
         
         return 0;
     }
@@ -111,7 +122,7 @@ namespace fp {
         PyThreadState_Swap(serviceThreadState);
 
         // getting srcipt object
-        PyObject *pScript = PyString_FromString(env.script.c_str());
+        PyObject *pScript = PyString_FromString(wsgi.script.c_str());
         
         // Importing object
         pModule = PyImport_Import(pScript);
@@ -124,7 +135,7 @@ namespace fp {
         }
         
         // get our method from module
-        pFunc = PyObject_GetAttrString(pModule, (char *)env.point.c_str());
+        pFunc = PyObject_GetAttrString(pModule, (char *)wsgi.point.c_str());
         
         if (pFunc == NULL || !PyCallable_Check(pFunc)) {
             Py_XDECREF(pFunc);

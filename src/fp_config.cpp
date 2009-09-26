@@ -11,9 +11,9 @@
 
 namespace fp {
     char *config::app_name;
-    conf_t config::cnf;
-    env_t config::env;
-
+    conf_t config::conf;
+    wsgi_t config::wsgi;
+    
     
     config::config() {
         in_file = new std::ifstream;
@@ -32,7 +32,7 @@ namespace fp {
             printLine("Config error: unable to open file");
             return -1;
         }
-            
+        
         
         while (!in_file->eof()) {
             // get line from file
@@ -55,7 +55,7 @@ namespace fp {
             if (line.compare(0, 1, "[") == 0) {
                 if (line.compare(line.size()-1, 1, "]") == 0) {
                     group = line.substr(1, line.size()-2);
-
+                    
                     if (group.size() == 0) {
                         printLine("Config error: dummy group definition");
                         return -1;
@@ -85,31 +85,33 @@ namespace fp {
                     trim(val);
                     
                     if (group.compare("server") == 0) {
-                        if (key.compare("threads") == 0) {
-                            cnf.threads_cnt = toInt(val);
-                        } else if (key.compare("workers") == 0) {
-                            cnf.workers_cnt = toInt(val);
+                        if (key.compare("workers") == 0) {
+                            conf.workers_cnt = toInt(val);
+                        } else if (key.compare("threads") == 0) {
+                            conf.threads_cnt = toInt(val);
                         } else if (key.compare("user") == 0) {
                             
                         } else if (key.compare("group") == 0) {
                             
                         } else if (key.compare("accept_mutex") == 0) {
-                            if (val.compare("on") == 0) {
-                                cnf.accept_mt = true;
-                            } else {
-                                cnf.accept_mt = false;
-                            }
+                            conf.accept_mt = toBool(val);
+                        } else {
+                            printLine("Config warning: ignoring unknown key: "+ key);
                         }
                     } else if (group.compare("wsgi") == 0) {
                         if (key.compare("wsgi_path") == 0) {
-                            env.base_dir = val;
+                            wsgi.base_dir = val;
                         } else if (key.compare("wsgi_script") == 0) {
-                            env.script = val;
+                            wsgi.script = val;
                         } else if (key.compare("wsgi_handler") == 0) {
-                            env.point = val;
+                            wsgi.point = val;
+                        } else if (key.compare("wsgi_load_site") == 0) {
+                            wsgi.load_site = toBool(val);
+                        } else {
+                            printLine("Config warning: ignoring unknown key: "+ key);
                         }
                     } else if (group.compare("environment") == 0) {
-
+                        
                     } else {
                         printLine("Config error: i don`t know what do you want from me");
                         return -1;
@@ -117,8 +119,8 @@ namespace fp {
                 }
             }
         }
-                
+        
         return 0;
     }
-
+    
 }

@@ -29,11 +29,12 @@ namespace fp {
         bool accept_mt;
     };
     
-    struct env_t {
-        std::string hostname;
+    struct wsgi_t {
         std::string base_dir;
         std::string script;
         std::string point;
+
+        bool load_site;
     };
     
     class config: public core {
@@ -49,8 +50,8 @@ namespace fp {
 
     protected:
         static char *app_name;
-        static conf_t cnf;
-        static env_t env;        
+        static conf_t conf;
+        static wsgi_t wsgi;
     };
 }
 #endif

@@ -20,6 +20,7 @@ namespace fp {
         void trim(std::string& str);
         void printLine(std::string str, ...);
         int toInt(std::string str);
+        bool toBool(std::string str);
         
     private:
     protected:

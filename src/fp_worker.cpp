@@ -29,7 +29,6 @@ namespace fp {
     }
     
     worker::~worker() {
-        delete py;
     }
     
     int worker::acceptor() {
@@ -89,10 +88,10 @@ namespace fp {
             return -1;
         }              
         
-        if (cnf.threads_cnt > 0) {
-            threads.reserve(cnf.threads_cnt);
+        if (conf.threads_cnt > 0) {
+            threads.reserve(conf.threads_cnt);
             
-            for (int i=0;i < cnf.threads_cnt;i++) {
+            for (int i=0;i < conf.threads_cnt;i++) {
                 pthread_t thread;
                 
                 int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);

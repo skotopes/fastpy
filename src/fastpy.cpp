@@ -73,7 +73,7 @@ namespace fp {
 
         if (detach) {
             // forking and working
-            for (int i=0; i < cnf.workers_cnt; i++) {
+            for (int i=0; i < conf.workers_cnt; i++) {
                 createChild();
             }
         } else {

@@ -35,4 +35,13 @@ namespace fp {
     int core::toInt(std::string str) {
         return atoi(str.c_str());
     }
+    
+    bool core::toBool(std::string str) {
+        if (str.compare("on") == 0) {
+            return true;
+        } else if (str.compare("true") == 0) {
+            return true;
+        }
+        return false;
+    }
 }
