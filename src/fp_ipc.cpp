@@ -42,8 +42,6 @@ namespace fp {
         if ((char *)sh_data == (char *)(-1)) {
             return -3;
         }
-
-        sh_data = new wdata_t;
         
         ready = true;
     }
@@ -54,7 +52,8 @@ namespace fp {
         }
         
         pthread_mutex_lock(&access_mutex);
-        *sh_data = data;
+//        *sh_data = data;
+        memcpy(sh_data, &data, sizeof(wdata_t));
         pthread_mutex_unlock(&access_mutex);
         
         return 0;
@@ -66,7 +65,8 @@ namespace fp {
         }
 
         pthread_mutex_lock(&access_mutex);
-        data = *sh_data;
+//        data = *sh_data;
+        memcpy(&data, sh_data, sizeof(wdata_t));
         pthread_mutex_unlock(&access_mutex);
         
         return 0;

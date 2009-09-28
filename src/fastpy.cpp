@@ -104,7 +104,6 @@ namespace fp {
             } else {
                 return -1;
             }
-            
         } 
 
         // forking and working
@@ -173,10 +172,9 @@ namespace fp {
                 c.cipc.readData(m);
                 
                 std::cout << "pid: " << c_pid << " ts: " << m.timestamp << std::endl;
-                sleep(1);
             }
             
-            sleep(5);
+            sleep(2);
         } while (!able_to_die);
 
         return 0;

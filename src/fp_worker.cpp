@@ -150,7 +150,7 @@ namespace fp {
         do {
             wdata_t m;
             i++;
-            m.timestamp =i;
+            m.timestamp = i;
             int e = wipc.updateData(m);
             if (e < 0) {
                 std::cout << "Unable to update shm: "<< e << std::endl;
