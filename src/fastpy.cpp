@@ -70,18 +70,52 @@ namespace fp {
         if (fcgi->openSock(sock_f) < 0) {
             return 250;
         }
-
+        
         if (detach) {
-            // forking and working
-            for (int i=0; i < conf.workers_cnt; i++) {
-                createChild();
+            int fpid = fork();
+            
+            if (fpid == 0) {
+                // some where in kenya(it`s our childrens)
+                int fd = open("/dev/null", O_RDWR);
+                
+                if (fd == -1) {
+                    logError("Unable to open /dev/null");
+                    return 252;
+                }
+                
+                if (dup2(fd, STDIN_FILENO) == -1) {
+                    logError("Unable to close stdin");
+                    return 252;
+                }
+                
+                if (dup2(fd, STDOUT_FILENO) == -1) {
+                    logError("Unable to close stdout");
+                    return 252;
+                }
+                                
+                if (fd > STDERR_FILENO) {
+                    if (close(fd) == -1) {
+                        logError("Unable to close stderr");
+                        return 252;
+                    }
+                }
+            } else if (fpid > 0) {
+                // TODO probably pid file should be here
+            } else {
+                return -1;
             }
-        } else {
-            worker w(fcgi);
-            w.startWorker();
-            w.waitWorker();            
+            
+        } 
+
+        // forking and working
+        for (int i=0; i < conf.workers_cnt; i++) {
+            createChild();
         }
         
+        if (yesMaster() < 0) {
+            return 251;
+        }
+
         return 0;
     }
     
@@ -99,7 +133,18 @@ namespace fp {
             exit(0);                
         } else if (fpid > 0){
             // lions and tigers
+            child_t c;
             
+            int e = c.cipc.initMQ(fpid, true);
+            
+            if (e <0) {
+                std::cout << "master mq init error: "<< e << " en: " << errno << std::endl;
+            }
+            
+            c.conn_served = 0;
+            c.conn_failed = 0;
+            
+            childrens[fpid] = c;
         } else {
             return -1;
         }
@@ -108,7 +153,7 @@ namespace fp {
     }
     
     int fastPy::yesMaster() {
-        bool do_exit = false;
+        bool able_to_die = false;
         
         // registering signal handler
         signal(SIGHUP, sig_handler);
@@ -117,10 +162,23 @@ namespace fp {
         signal(SIGUSR1, sig_handler);
         signal(SIGUSR2, sig_handler);        
         
-        while (!do_exit) {
+        do {
+            std::map<int,child_t>::iterator c_it;
             
-        }
-        
+            for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+                wdata_t m;
+                int c_pid = (*c_it).first;
+                child_t c = (*c_it).second;
+                
+                c.cipc.readData(m);
+                
+                std::cout << "pid: " << c_pid << " ts: " << m.timestamp << std::endl;
+                sleep(1);
+            }
+            
+            sleep(5);
+        } while (!able_to_die);
+
         return 0;
     }
     

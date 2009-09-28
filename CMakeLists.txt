@@ -25,6 +25,7 @@ set(fastpy_src
     src/fp_fastcgi.cpp
     src/fp_core.cpp
     src/fp_log.cpp
+    src/fp_ipc.cpp
     src/fp_worker.cpp
     src/fp_handler.cpp
 )

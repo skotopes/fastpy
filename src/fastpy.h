@@ -11,19 +11,24 @@
 #define FASTPY_H
 
 #include <iostream>
+#include <map>
 #include <unistd.h>
+#include <fcntl.h>
 #include <signal.h>
 
-#include "fp_config.h"
 #include "fp_log.h"
+#include "fp_ipc.h"
+#include "fp_config.h"
 #include "fp_fastcgi.h"
 #include "fp_worker.h"
 
 namespace fp {
     
-    struct worker_t {
-        int pid;
-        
+    struct child_t {
+        ipc cipc;
+        uint64_t conn_served;
+        uint64_t conn_failed;
+        uint64_t conn_limit;
     };
     
     class fastPy: config, log {
@@ -37,7 +42,8 @@ namespace fp {
         char *config_f;
         char *sock_f;
         bool detach;
-
+        std::map<int,child_t> childrens;
+        
         fastcgi *fcgi;
         
  
