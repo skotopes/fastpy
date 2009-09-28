@@ -100,7 +100,7 @@ namespace fp {
                     }
                 }
             } else if (fpid > 0) {
-                // TODO probably pid file should be here
+                return 0;
             } else {
                 return -1;
             }
