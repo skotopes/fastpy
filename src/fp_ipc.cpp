@@ -9,11 +9,10 @@
 
 #include "fp_ipc.h"
 
-namespace fp {
-    pthread_mutex_t ipc::access_mutex;
-    
+namespace fp {    
     ipc::ipc() {
         ready = false;
+        sh_data = NULL;
     }
     
     ipc::~ipc() {
@@ -36,12 +35,15 @@ namespace fp {
         if ((shmid = shmget(key, sizeof(wdata_t), rset)) == -1) {
             return -2;
         }
-        
+
         // attach shared memory
-        sh_data = (wdata_t*)shmat(shmid, (void *)0, 0);
-        if ((char *)sh_data == (char *)(-1)) {
+        void *sh_ptr = shmat(shmid, NULL, 0);
+        if (sh_ptr == (void *)(-1) || sh_ptr == NULL) {
             return -3;
         }
+        
+        sh_data = (struct wdata_t*) sh_ptr;
+        pthread_mutex_init(&sh_data->access_mutex, NULL);
         
         ready = true;
     }
@@ -51,10 +53,9 @@ namespace fp {
             return -1;
         }
         
-        pthread_mutex_lock(&access_mutex);
-//        *sh_data = data;
-        memcpy(sh_data, &data, sizeof(wdata_t));
-        pthread_mutex_unlock(&access_mutex);
+        pthread_mutex_lock(&sh_data->access_mutex);
+        *sh_data = data;
+        pthread_mutex_unlock(&sh_data->access_mutex);
         
         return 0;
     }
@@ -64,11 +65,10 @@ namespace fp {
             return -1;
         }
 
-        pthread_mutex_lock(&access_mutex);
-//        data = *sh_data;
-        memcpy(&data, sh_data, sizeof(wdata_t));
-        pthread_mutex_unlock(&access_mutex);
-        
+        pthread_mutex_lock(&sh_data->access_mutex);
+        data = *sh_data;
+        pthread_mutex_unlock(&sh_data->access_mutex);
+
         return 0;
     }
     
@@ -82,7 +82,9 @@ namespace fp {
             return -2;
         }
         
-        shmctl(shmid, IPC_RMID, NULL);
+        if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+            return -3;
+        }
         
         ready = false;
         

@@ -20,28 +20,25 @@
 
 namespace fp {
     struct wdata_t {
+        pthread_mutex_t access_mutex;
+        uint32_t reload_ba;
         uint32_t timestamp;
-        
-        bool reload;
-        bool shutdown;
-        
         uint64_t conn_served;
         uint64_t conn_failed;
-    };    
-    
+    };
+        
     class ipc: public config {
     public:
         ipc();
         ~ipc();
         
-        int initMQ(int w_num, bool force_create = false);
+        int initMQ(int w_num, bool force_create=false);
         int updateData(wdata_t &data);
         int readData(wdata_t &data);
         int closeMQ();
         
     private:
         bool ready;
-        static pthread_mutex_t access_mutex;
 
         key_t key;
         int shmid;

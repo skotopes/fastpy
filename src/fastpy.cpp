@@ -136,7 +136,7 @@ namespace fp {
             
             int e = c.cipc.initMQ(fpid, true);
             
-            if (e <0) {
+            if (e < 0) {
                 std::cout << "master mq init error: "<< e << " en: " << errno << std::endl;
             }
             

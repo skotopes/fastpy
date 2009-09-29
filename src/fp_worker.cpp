@@ -21,10 +21,6 @@ namespace fp {
 
         // initing ipc
         wpid = getpid();
-        int e = wipc.initMQ(wpid, true);
-        if (e < 0) {
-            std::cout << "mq init error: " << e << " eeno:"<< errno <<std::endl;
-        }
         
         // init joinable threads
         pthread_attr_init(&attr);
@@ -145,6 +141,12 @@ namespace fp {
     }
     
     int worker::scheduler() {
+        int e = wipc.initMQ(wpid,true);
+
+        if (e < 0) {
+            std::cout << "mq init error: " << e << " eeno:"<< errno <<std::endl;
+        }
+        
         bool able_to_die = false;
         int i=0;
         do {
@@ -154,8 +156,6 @@ namespace fp {
             int e = wipc.updateData(m);
             if (e < 0) {
                 std::cout << "Unable to update shm: "<< e << std::endl;
-            } else {
-                std::cout << "Writing shm for pid: "<< wpid << std::endl;
             }
             
             if (!able_to_work) able_to_die = true;
