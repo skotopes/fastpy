@@ -38,8 +38,6 @@ namespace fp {
         int closeMQ();
         
     private:
-        bool ready;
-
         key_t key;
         int shmid;
         wdata_t *sh_data;

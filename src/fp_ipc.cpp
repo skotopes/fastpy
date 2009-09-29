@@ -11,12 +11,10 @@
 
 namespace fp {    
     ipc::ipc() {
-        ready = false;
         sh_data = NULL;
     }
     
     ipc::~ipc() {
-        if (ready) closeMQ();
     }
     
     int ipc::initMQ(int w_num, bool force_create) {
@@ -45,11 +43,11 @@ namespace fp {
         sh_data = (struct wdata_t*) sh_ptr;
         pthread_mutex_init(&sh_data->access_mutex, NULL);
         
-        ready = true;
+        return 0;
     }
     
     int ipc::updateData(wdata_t &data) {
-        if (!ready) {
+        if (sh_data == NULL) {
             return -1;
         }
         
@@ -61,7 +59,7 @@ namespace fp {
     }
     
     int ipc::readData(wdata_t &data) {
-        if (!ready) {
+        if (sh_data == NULL) {
             return -1;
         }
 
@@ -74,7 +72,7 @@ namespace fp {
     
     int ipc::closeMQ() {
         // probably key is already destroyed
-        if (!ready) {
+        if (sh_data == NULL) {
             return -1;
         }
         
@@ -86,7 +84,6 @@ namespace fp {
             return -3;
         }
         
-        ready = false;
         
         return 0;
     }
