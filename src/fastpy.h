@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "fp_log.h"
 #include "fp_ipc.h"
@@ -26,9 +27,7 @@ namespace fp {
     
     struct child_t {
         ipc cipc;
-        uint64_t conn_served;
-        uint64_t conn_failed;
-        uint64_t conn_limit;
+        time_t timestamp;
     };
     
     class fastPy: config, log {

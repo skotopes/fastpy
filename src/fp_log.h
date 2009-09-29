@@ -10,21 +10,35 @@
 #ifndef FP_LOG_H
 #define FP_LOG_H
 
+#include <pthread.h>
 #include <iostream>
+#include <fstream>
+
 #include "fp_core.h"
 
 namespace fp {
-    class log: public core {
-        
+    
+    enum logerr_e {
+        LOG_SKIP,
+        LOG_DEBUG,
+        LOG_WARN,
+        LOG_ERROR
+    };
+    
+    class log: public core {        
     public:
         log();
         ~log();
 
-        int logError(std::string s);
         int openLogs(std::string a_log, std::string e_log);
         
+        int logError(std::string s);
+        int logError(std::string mod, logerr_e level, std::string s);
+        
     private:
-        static bool log_opened;
+        static pthread_mutex_t log_mutex;
+        static std::ofstream access_log_f;
+        static std::ofstream error_log_f;
     };
 }
 

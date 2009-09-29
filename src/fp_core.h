@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdlib.h>
+#include <time.h>
 
 namespace fp {
     class core {

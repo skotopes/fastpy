@@ -152,7 +152,7 @@ namespace fp {
         do {
             wdata_t m;
             i++;
-            m.timestamp = i;
+            m.timestamp = time(NULL);
             int e = wipc.updateData(m);
             if (e < 0) {
                 std::cout << "Unable to update shm: "<< e << std::endl;
@@ -162,6 +162,8 @@ namespace fp {
                 
             sleep(1);
         } while (!able_to_die);
+        
+        wipc.closeMQ();
         
         return 0;
     }

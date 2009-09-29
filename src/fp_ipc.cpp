@@ -41,7 +41,10 @@ namespace fp {
         }
         
         sh_data = (struct wdata_t*) sh_ptr;
-        pthread_mutex_init(&sh_data->access_mutex, NULL);
+        
+        if (force_create) {
+            pthread_mutex_init(&sh_data->access_mutex, NULL);
+        }
         
         return 0;
     }
@@ -70,7 +73,7 @@ namespace fp {
         return 0;
     }
     
-    int ipc::closeMQ() {
+    int ipc::closeMQ(bool force_close) {
         // probably key is already destroyed
         if (sh_data == NULL) {
             return -1;
@@ -80,10 +83,9 @@ namespace fp {
             return -2;
         }
         
-        if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-            return -3;
+        if (force_close) {
+            shmctl(shmid, IPC_RMID, NULL);
         }
-        
         
         return 0;
     }

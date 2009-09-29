@@ -20,9 +20,25 @@
 
 namespace fp {
     struct wdata_t {
+        // this shm timestamp
+        time_t timestamp;
+        
+        // TODO: rewrite this part
         pthread_mutex_t access_mutex;
-        uint32_t reload_ba;
-        uint32_t timestamp;
+        
+        // master flags
+        bool blue_pill;
+        bool red_pill;
+        
+        // worker status and signal
+        uint32_t status;
+        uint32_t signal;
+
+        // worker threads stats
+        uint32_t threads_used;
+        uint32_t threads_free;
+        
+        // worker conn stats
         uint64_t conn_served;
         uint64_t conn_failed;
     };
@@ -35,7 +51,7 @@ namespace fp {
         int initMQ(int w_num, bool force_create=false);
         int updateData(wdata_t &data);
         int readData(wdata_t &data);
-        int closeMQ();
+        int closeMQ(bool force_close=false);
         
     private:
         key_t key;

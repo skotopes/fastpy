@@ -125,7 +125,7 @@ namespace fp {
         if (fpid == 0) {
             // some where in kenya(it`s our childrens)
             worker w(fcgi);
-            
+
             w.startWorker();
             w.waitWorker();
             
@@ -139,10 +139,7 @@ namespace fp {
             if (e < 0) {
                 std::cout << "master mq init error: "<< e << " en: " << errno << std::endl;
             }
-            
-            c.conn_served = 0;
-            c.conn_failed = 0;
-            
+                        
             childrens[fpid] = c;
         } else {
             return -1;
@@ -153,7 +150,8 @@ namespace fp {
     
     int fastPy::yesMaster() {
         bool able_to_die = false;
-        
+        std::map<int,child_t>::iterator c_it;
+
         // registering signal handler
         signal(SIGHUP, sig_handler);
         signal(SIGINT, sig_handler);
@@ -162,8 +160,6 @@ namespace fp {
         signal(SIGUSR2, sig_handler);        
         
         do {
-            std::map<int,child_t>::iterator c_it;
-            
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 wdata_t m;
                 int c_pid = (*c_it).first;
@@ -177,6 +173,12 @@ namespace fp {
             sleep(2);
         } while (!able_to_die);
 
+        // destroying shm segment
+        for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+            child_t c = (*c_it).second;            
+            c.cipc.closeMQ(true);
+        }
+        
         return 0;
     }
     

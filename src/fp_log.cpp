@@ -10,7 +10,8 @@
 #include "fp_log.h"
 
 namespace fp {
-    bool log::log_opened = false;
+    std::ofstream log::access_log_f;
+    std::ofstream log::error_log_f;
     
     log::log() {
         

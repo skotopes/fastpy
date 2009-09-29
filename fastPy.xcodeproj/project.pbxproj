@@ -1,0 +1,262 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		23AD4C46106DC0A700B5E83F /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AD4C27106DB85700B5E83F /* Python.framework */; };
+		23AD4C97106E859E00B5E83F /* fp_ipc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23AD4C96106E859E00B5E83F /* fp_ipc.cpp */; };
+		23ADF4C21050756A004653CA /* fp_fastcgi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23ADF4C11050756A004653CA /* fp_fastcgi.cpp */; };
+		23BC5AC2105310BF00C2D606 /* fp_handler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23BC5AC1105310BF00C2D606 /* fp_handler.cpp */; };
+		23D0A660104EECD3006785C9 /* libfcgi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 23D0A65F104EECD3006785C9 /* libfcgi.dylib */; };
+		23D0A9F410506F2E006785C9 /* fp_log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EA10506F2E006785C9 /* fp_log.cpp */; };
+		23D0A9F510506F2E006785C9 /* fastpy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EC10506F2E006785C9 /* fastpy.cpp */; };
+		23D0A9F610506F2E006785C9 /* fp_worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EE10506F2E006785C9 /* fp_worker.cpp */; };
+		23D0A9F710506F2E006785C9 /* fp_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9F110506F2E006785C9 /* fp_core.cpp */; };
+		23D0A9F810506F2E006785C9 /* fp_config.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9F310506F2E006785C9 /* fp_config.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		23AD4C27106DB85700B5E83F /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = /System/Library/Frameworks/Python.framework; sourceTree = "<absolute>"; };
+		23AD4C95106E859E00B5E83F /* fp_ipc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_ipc.h; sourceTree = "<group>"; };
+		23AD4C96106E859E00B5E83F /* fp_ipc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_ipc.cpp; sourceTree = "<group>"; };
+		23ADF4C01050756A004653CA /* fp_fastcgi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_fastcgi.h; sourceTree = "<group>"; };
+		23ADF4C11050756A004653CA /* fp_fastcgi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_fastcgi.cpp; sourceTree = "<group>"; };
+		23AFE08C105FE7D500D94973 /* config_example.conf */ = {isa = PBXFileReference; explicitFileType = text.xcconfig; path = config_example.conf; sourceTree = "<group>"; };
+		23AFE09C105FE9E000D94973 /* readme.ru */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.ru; sourceTree = "<group>"; };
+		23BC5AC0105310BF00C2D606 /* fp_handler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_handler.h; sourceTree = "<group>"; };
+		23BC5AC1105310BF00C2D606 /* fp_handler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_handler.cpp; sourceTree = "<group>"; };
+		23D0A58E104E92F1006785C9 /* fastPy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fastPy; sourceTree = BUILT_PRODUCTS_DIR; };
+		23D0A65F104EECD3006785C9 /* libfcgi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfcgi.dylib; path = /usr/lib/libfcgi.dylib; sourceTree = "<absolute>"; };
+		23D0A6F8104F117A006785C9 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		23D0A99910505D48006785C9 /* config.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = config.conf; sourceTree = "<group>"; };
+		23D0A9EA10506F2E006785C9 /* fp_log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_log.cpp; sourceTree = "<group>"; };
+		23D0A9EB10506F2E006785C9 /* fp_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_core.h; sourceTree = "<group>"; };
+		23D0A9EC10506F2E006785C9 /* fastpy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fastpy.cpp; sourceTree = "<group>"; };
+		23D0A9ED10506F2E006785C9 /* fp_worker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_worker.h; sourceTree = "<group>"; };
+		23D0A9EE10506F2E006785C9 /* fp_worker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_worker.cpp; sourceTree = "<group>"; };
+		23D0A9EF10506F2E006785C9 /* fp_log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_log.h; sourceTree = "<group>"; };
+		23D0A9F010506F2E006785C9 /* fastpy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fastpy.h; sourceTree = "<group>"; };
+		23D0A9F110506F2E006785C9 /* fp_core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_core.cpp; sourceTree = "<group>"; };
+		23D0A9F210506F2E006785C9 /* fp_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_config.h; sourceTree = "<group>"; };
+		23D0A9F310506F2E006785C9 /* fp_config.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_config.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		23D0A58C104E92F1006785C9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23AD4C46106DC0A700B5E83F /* Python.framework in Frameworks */,
+				23D0A660104EECD3006785C9 /* libfcgi.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		23AFE09B105FE99B00D94973 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				23AFE09C105FE9E000D94973 /* readme.ru */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
+		23BC5B1B1053309500C2D606 /* engine */ = {
+			isa = PBXGroup;
+			children = (
+				23AD4C95106E859E00B5E83F /* fp_ipc.h */,
+				23AD4C96106E859E00B5E83F /* fp_ipc.cpp */,
+				23D0A9ED10506F2E006785C9 /* fp_worker.h */,
+				23D0A9EE10506F2E006785C9 /* fp_worker.cpp */,
+				23ADF4C01050756A004653CA /* fp_fastcgi.h */,
+				23ADF4C11050756A004653CA /* fp_fastcgi.cpp */,
+				23BC5AC0105310BF00C2D606 /* fp_handler.h */,
+				23BC5AC1105310BF00C2D606 /* fp_handler.cpp */,
+			);
+			name = engine;
+			sourceTree = "<group>";
+		};
+		23D0A554104E8A29006785C9 = {
+			isa = PBXGroup;
+			children = (
+				23AFE09B105FE99B00D94973 /* docs */,
+				23D0A99810505D30006785C9 /* stuff */,
+				23D0A6F7104F116B006785C9 /* cmake */,
+				23D0A64F104EEB83006785C9 /* lib */,
+				23D0A571104E8C32006785C9 /* src */,
+				23D0A58F104E92F1006785C9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		23D0A571104E8C32006785C9 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				23D0A9F010506F2E006785C9 /* fastpy.h */,
+				23D0A9EC10506F2E006785C9 /* fastpy.cpp */,
+				23D0A5B7104E961D006785C9 /* core */,
+				23BC5B1B1053309500C2D606 /* engine */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		23D0A58F104E92F1006785C9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				23D0A58E104E92F1006785C9 /* fastPy */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		23D0A5B7104E961D006785C9 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				23D0A9EB10506F2E006785C9 /* fp_core.h */,
+				23D0A9F110506F2E006785C9 /* fp_core.cpp */,
+				23D0A9F210506F2E006785C9 /* fp_config.h */,
+				23D0A9F310506F2E006785C9 /* fp_config.cpp */,
+				23D0A9EF10506F2E006785C9 /* fp_log.h */,
+				23D0A9EA10506F2E006785C9 /* fp_log.cpp */,
+			);
+			name = core;
+			sourceTree = "<group>";
+		};
+		23D0A64F104EEB83006785C9 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				23AD4C27106DB85700B5E83F /* Python.framework */,
+				23D0A65F104EECD3006785C9 /* libfcgi.dylib */,
+			);
+			name = lib;
+			sourceTree = "<group>";
+		};
+		23D0A6F7104F116B006785C9 /* cmake */ = {
+			isa = PBXGroup;
+			children = (
+				23D0A6F8104F117A006785C9 /* CMakeLists.txt */,
+			);
+			name = cmake;
+			sourceTree = "<group>";
+		};
+		23D0A99810505D30006785C9 /* stuff */ = {
+			isa = PBXGroup;
+			children = (
+				23AFE08C105FE7D500D94973 /* config_example.conf */,
+				23D0A99910505D48006785C9 /* config.conf */,
+			);
+			name = stuff;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		23D0A58D104E92F1006785C9 /* fastpy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23D0A593104E92F2006785C9 /* Build configuration list for PBXNativeTarget "fastpy" */;
+			buildPhases = (
+				23D0A58B104E92F1006785C9 /* Sources */,
+				23D0A58C104E92F1006785C9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = fastpy;
+			productName = fastJs;
+			productReference = 23D0A58E104E92F1006785C9 /* fastPy */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		23D0A556104E8A29006785C9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = NO;
+			};
+			buildConfigurationList = 23D0A559104E8A29006785C9 /* Build configuration list for PBXProject "fastPy" */;
+			compatibilityVersion = "Xcode 2.4";
+			hasScannedForEncodings = 0;
+			mainGroup = 23D0A554104E8A29006785C9;
+			productRefGroup = 23D0A58F104E92F1006785C9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				23D0A58D104E92F1006785C9 /* fastpy */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		23D0A58B104E92F1006785C9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23D0A9F510506F2E006785C9 /* fastpy.cpp in Sources */,
+				23D0A9F710506F2E006785C9 /* fp_core.cpp in Sources */,
+				23D0A9F410506F2E006785C9 /* fp_log.cpp in Sources */,
+				23D0A9F810506F2E006785C9 /* fp_config.cpp in Sources */,
+				23D0A9F610506F2E006785C9 /* fp_worker.cpp in Sources */,
+				23ADF4C21050756A004653CA /* fp_fastcgi.cpp in Sources */,
+				23BC5AC2105310BF00C2D606 /* fp_handler.cpp in Sources */,
+				23AD4C97106E859E00B5E83F /* fp_ipc.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		23D0A557104E8A29006785C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_VERSION = 4.2;
+			};
+			name = Debug;
+		};
+		23D0A591104E92F2006785C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNKNOWN_PRAGMAS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = YES;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_PROFILING_CODE = YES;
+				HEADER_SEARCH_PATHS = /System/Library/Frameworks/Python.framework/Headers;
+				PRODUCT_NAME = fastPy;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		23D0A559104E8A29006785C9 /* Build configuration list for PBXProject "fastPy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23D0A557104E8A29006785C9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		23D0A593104E92F2006785C9 /* Build configuration list for PBXNativeTarget "fastpy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23D0A591104E92F2006785C9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 23D0A556104E8A29006785C9 /* Project object */;
+}
