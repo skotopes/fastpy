@@ -24,7 +24,26 @@
 #include "fp_handler.h"
 
 namespace fp {    
-        
+    // worker state code 
+    enum w_code_e {
+        W_NRDY,     // worker not yet ready
+        W_FINE,     // worker ready
+        W_IRLD,     // worker in reload now
+        W_BUSY,     // worker is busy and unable to serv conn
+        W_FAIL,     // worker failure, probably we must terminate
+        W_TERM      // worker terminated (alredy should be dead)
+    };
+    
+    // master state code
+    enum m_code_e {
+        M_NRDY,     // master not yet ready
+        M_FINE,     // master ready
+        M_SKIP,     // master wants worker to skip connections 
+        M_DRLD,     // master wants worker to reload code
+        M_TERM      // master wants worker to terminate
+    };
+    
+    // worker class 
     class worker: public log, public config {
     public:
         worker(fastcgi *fc);
@@ -39,10 +58,13 @@ namespace fp {
         
         pthread_mutex_t accept_mutex;
         pthread_attr_t attr;
+        pthread_t scheduler_thread;
         std::vector<pthread_t> threads;
         
         static bool able_to_work;
+        static int t_count;
         static int wpid;
+        static int csig;
         static ipc wipc;
 
         int acceptor();
@@ -52,6 +74,6 @@ namespace fp {
         static void *schedulerThread(void *data);
         static void sigHandler(int sig_type);
     };
-}
+};
 
 #endif

@@ -57,6 +57,18 @@ namespace fp {
         return 0;
     }
     
+    int pyengine::serviceLockTC() {
+        PyEval_AcquireLock();
+        PyThreadState_Swap(serviceThreadState);
+        return 0;
+    }
+    
+    int pyengine::serviceUnlockTC() {
+        serviceThreadState = PyThreadState_Swap(NULL);
+        PyEval_ReleaseLock();
+        return 0;
+    }
+    
     int pyengine::nullAndUnlockTC(thread_t &t) {
         if (t.in_use) {
             t.workerThreadState = PyThreadState_Swap(NULL);
@@ -117,10 +129,8 @@ namespace fp {
     PyObject *pyengine::pFunc = NULL;
 
     int pyengine::initCallback() {
+        serviceLockTC();
         
-        PyEval_AcquireLock();
-        PyThreadState_Swap(serviceThreadState);
-
         // getting srcipt object
         PyObject *pScript = PyString_FromString(wsgi.script.c_str());
         
@@ -131,6 +141,7 @@ namespace fp {
         // if pModule was imported prperly we will be able to continue
         if (pModule == NULL) {
             PyErr_Print();
+            serviceUnlockTC();
             return -1;
         }
         
@@ -141,17 +152,45 @@ namespace fp {
             Py_XDECREF(pFunc);
             Py_DECREF(pModule);
             PyErr_Print();
+            serviceUnlockTC();
             return -2;
         }
-                
+        
         cbr_flag = true;
 
-        serviceThreadState = PyThreadState_Swap(NULL);
-        PyEval_ReleaseLock();
-
+        serviceUnlockTC();
+        
         return 0;
     }
 
+    int pyengine::reloadCallback() {
+        serviceLockTC();
+        
+        PyObject *m = PyImport_ReloadModule(pModule);
+        
+        if (m == NULL) {
+            PyErr_Print();
+            serviceUnlockTC();
+            return -1;
+        }
+
+        PyObject *f = PyObject_GetAttrString(m, (char *)wsgi.point.c_str());
+        
+        if (f == NULL || !PyCallable_Check(f)) {
+            Py_XDECREF(f);
+            Py_DECREF(m);
+            PyErr_Print();
+            serviceUnlockTC();
+            return -2;
+        }
+        
+        pModule = m;
+        pFunc = f;
+        
+        serviceUnlockTC();
+        return 0;
+    }
+    
     int pyengine::releaseCallback() {
         // cleanup handler
         Py_XDECREF(pFunc);
@@ -249,7 +288,6 @@ namespace fp {
         } else {
             // throw python exception
             PyObject_Print(args, stdout, Py_PRINT_RAW);
-            std::cout << rSize << std::endl;
             PyErr_SetString(PyExc_TypeError, "Wrong arguments count passed to start_response");
         }
 

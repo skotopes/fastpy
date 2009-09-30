@@ -23,17 +23,17 @@ set(fastpy_src
     src/fastpy.cpp
     src/fp_config.cpp
     src/fp_fastcgi.cpp
-    src/fp_core.cpp
     src/fp_log.cpp
     src/fp_ipc.cpp
     src/fp_worker.cpp
     src/fp_handler.cpp
+    src/fp_helpers.cpp
 )
 
 add_executable (fastpy ${fastpy_src})
 
 target_link_libraries(fastpy pthread fcgi ${PYTHON_LIBRARY})
-set_target_properties(fastpy PROPERTIES VERSION 0.0.1 SOVERSION 0)
+set_target_properties(fastpy PROPERTIES VERSION 0.0.2 SOVERSION 0)
 
 ########### install files ###############
 

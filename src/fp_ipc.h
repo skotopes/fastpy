@@ -14,8 +14,8 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/sem.h> 
 
-#include "fp_core.h"
 #include "fp_config.h"
 
 namespace fp {
@@ -23,16 +23,10 @@ namespace fp {
         // this shm timestamp
         time_t timestamp;
         
-        // TODO: rewrite this part
-        pthread_mutex_t access_mutex;
-        
-        // master flags
-        bool blue_pill;
-        bool red_pill;
-        
-        // worker status and signal
-        uint32_t status;
-        uint32_t signal;
+        // master and worker exchange point
+        uint8_t m_code;
+        uint8_t w_code;
+        uint8_t signal;
 
         // worker threads stats
         uint32_t threads_used;
@@ -48,15 +42,17 @@ namespace fp {
         ipc();
         ~ipc();
         
-        int initMQ(int w_num, bool force_create=false);
-        int updateData(wdata_t &data);
-        int readData(wdata_t &data);
+        int initSHM(int w_num, bool force_create=false);
+        int lock();
+        int unlock();
         int closeMQ(bool force_close=false);
+        
+        wdata_t *shm;
         
     private:
         key_t key;
         int shmid;
-        wdata_t *sh_data;
+        int semid;
     };
     
 }

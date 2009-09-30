@@ -9,16 +9,18 @@
 
 #include "fp_ipc.h"
 
-namespace fp {    
+namespace fp {
+    
     ipc::ipc() {
-        sh_data = NULL;
+        shm = NULL;
     }
     
     ipc::~ipc() {
     }
     
-    int ipc::initMQ(int w_num, bool force_create) {
+    int ipc::initSHM(int w_num, bool force_create) {
         int rset = 0666;
+        semun arg;
         
         if (force_create) {
             rset = rset | IPC_CREAT;
@@ -34,56 +36,74 @@ namespace fp {
             return -2;
         }
 
-        // attach shared memory
-        void *sh_ptr = shmat(shmid, NULL, 0);
-        if (sh_ptr == (void *)(-1) || sh_ptr == NULL) {
+        if ((semid = semget(key, 1, rset)) == -1) {
             return -3;
         }
         
-        sh_data = (struct wdata_t*) sh_ptr;
+        // attach shared memory
+        void *sh_ptr = shmat(shmid, NULL, 0);
+        if (sh_ptr == (void *)(-1) || sh_ptr == NULL) {
+            return -4;
+        }
+
+        // initialize semaphore to 1
+        arg.val = 1;
+        if (semctl(semid, 0, SETVAL, arg) == -1) {
+            return -5;
+        }
+        
+        shm = (struct wdata_t*) sh_ptr;
         
         if (force_create) {
-            pthread_mutex_init(&sh_data->access_mutex, NULL);
+            shm->timestamp = 0;
+            shm->m_code = 0;
+            shm->w_code = 0;
+            shm->signal = 0;
+            shm->threads_used = 0;
+            shm->threads_free = 0;
+            shm->conn_served = 0;
+            shm->conn_failed = 0;            
         }
         
         return 0;
     }
     
-    int ipc::updateData(wdata_t &data) {
-        if (sh_data == NULL) {
+    int ipc::lock() {
+        sembuf sb = {0, -1, 0};
+
+        if (semop(semid, &sb, 1) == -1) {
             return -1;
         }
         
-        pthread_mutex_lock(&sh_data->access_mutex);
-        *sh_data = data;
-        pthread_mutex_unlock(&sh_data->access_mutex);
-        
         return 0;
     }
     
-    int ipc::readData(wdata_t &data) {
-        if (sh_data == NULL) {
+    int ipc::unlock() {
+        sembuf sb = {0, 1, 0};
+        shm->timestamp = time(NULL);
+        
+        if (semop(semid, &sb, 1) == -1) {
             return -1;
         }
-
-        pthread_mutex_lock(&sh_data->access_mutex);
-        data = *sh_data;
-        pthread_mutex_unlock(&sh_data->access_mutex);
-
         return 0;
     }
-    
+        
     int ipc::closeMQ(bool force_close) {
-        // probably key is already destroyed
-        if (sh_data == NULL) {
+        semun arg;
+        
+        if (shm == NULL) {
             return -1;
         }
         
-        if (shmdt(sh_data) == -1) {
+        if (shmdt(shm) == -1) {
             return -2;
         }
-        
+                
         if (force_close) {
+            if (semctl(semid, 0, IPC_RMID, arg) == -1) {
+                return -3;
+            }
+            
             shmctl(shmid, IPC_RMID, NULL);
         }
         

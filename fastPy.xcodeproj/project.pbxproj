@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		23795F73107307D40025647F /* fp_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23795F72107307D40025647F /* fp_helpers.cpp */; };
 		23AD4C46106DC0A700B5E83F /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AD4C27106DB85700B5E83F /* Python.framework */; };
 		23AD4C97106E859E00B5E83F /* fp_ipc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23AD4C96106E859E00B5E83F /* fp_ipc.cpp */; };
 		23ADF4C21050756A004653CA /* fp_fastcgi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23ADF4C11050756A004653CA /* fp_fastcgi.cpp */; };
@@ -15,11 +16,13 @@
 		23D0A9F410506F2E006785C9 /* fp_log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EA10506F2E006785C9 /* fp_log.cpp */; };
 		23D0A9F510506F2E006785C9 /* fastpy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EC10506F2E006785C9 /* fastpy.cpp */; };
 		23D0A9F610506F2E006785C9 /* fp_worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9EE10506F2E006785C9 /* fp_worker.cpp */; };
-		23D0A9F710506F2E006785C9 /* fp_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9F110506F2E006785C9 /* fp_core.cpp */; };
 		23D0A9F810506F2E006785C9 /* fp_config.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23D0A9F310506F2E006785C9 /* fp_config.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		23795F71107307D40025647F /* fp_helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_helpers.h; sourceTree = "<group>"; };
+		23795F72107307D40025647F /* fp_helpers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_helpers.cpp; sourceTree = "<group>"; };
+		23795F8E10730A440025647F /* fastpy_cm.xcclassmodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcclassmodel; path = fastpy_cm.xcclassmodel; sourceTree = "<group>"; };
 		23AD4C27106DB85700B5E83F /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = /System/Library/Frameworks/Python.framework; sourceTree = "<absolute>"; };
 		23AD4C95106E859E00B5E83F /* fp_ipc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_ipc.h; sourceTree = "<group>"; };
 		23AD4C96106E859E00B5E83F /* fp_ipc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_ipc.cpp; sourceTree = "<group>"; };
@@ -34,13 +37,11 @@
 		23D0A6F8104F117A006785C9 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		23D0A99910505D48006785C9 /* config.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = config.conf; sourceTree = "<group>"; };
 		23D0A9EA10506F2E006785C9 /* fp_log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_log.cpp; sourceTree = "<group>"; };
-		23D0A9EB10506F2E006785C9 /* fp_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_core.h; sourceTree = "<group>"; };
 		23D0A9EC10506F2E006785C9 /* fastpy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fastpy.cpp; sourceTree = "<group>"; };
 		23D0A9ED10506F2E006785C9 /* fp_worker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_worker.h; sourceTree = "<group>"; };
 		23D0A9EE10506F2E006785C9 /* fp_worker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_worker.cpp; sourceTree = "<group>"; };
 		23D0A9EF10506F2E006785C9 /* fp_log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_log.h; sourceTree = "<group>"; };
 		23D0A9F010506F2E006785C9 /* fastpy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fastpy.h; sourceTree = "<group>"; };
-		23D0A9F110506F2E006785C9 /* fp_core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_core.cpp; sourceTree = "<group>"; };
 		23D0A9F210506F2E006785C9 /* fp_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_config.h; sourceTree = "<group>"; };
 		23D0A9F310506F2E006785C9 /* fp_config.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_config.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -62,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				23AFE09C105FE9E000D94973 /* readme.ru */,
+				23795F8E10730A440025647F /* fastpy_cm.xcclassmodel */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -115,12 +117,12 @@
 		23D0A5B7104E961D006785C9 /* core */ = {
 			isa = PBXGroup;
 			children = (
-				23D0A9EB10506F2E006785C9 /* fp_core.h */,
-				23D0A9F110506F2E006785C9 /* fp_core.cpp */,
 				23D0A9F210506F2E006785C9 /* fp_config.h */,
 				23D0A9F310506F2E006785C9 /* fp_config.cpp */,
 				23D0A9EF10506F2E006785C9 /* fp_log.h */,
 				23D0A9EA10506F2E006785C9 /* fp_log.cpp */,
+				23795F71107307D40025647F /* fp_helpers.h */,
+				23795F72107307D40025647F /* fp_helpers.cpp */,
 			);
 			name = core;
 			sourceTree = "<group>";
@@ -197,13 +199,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D0A9F510506F2E006785C9 /* fastpy.cpp in Sources */,
-				23D0A9F710506F2E006785C9 /* fp_core.cpp in Sources */,
 				23D0A9F410506F2E006785C9 /* fp_log.cpp in Sources */,
 				23D0A9F810506F2E006785C9 /* fp_config.cpp in Sources */,
 				23D0A9F610506F2E006785C9 /* fp_worker.cpp in Sources */,
 				23ADF4C21050756A004653CA /* fp_fastcgi.cpp in Sources */,
 				23BC5AC2105310BF00C2D606 /* fp_handler.cpp in Sources */,
 				23AD4C97106E859E00B5E83F /* fp_ipc.cpp in Sources */,
+				23795F73107307D40025647F /* fp_helpers.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

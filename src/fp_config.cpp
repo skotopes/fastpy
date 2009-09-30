@@ -10,7 +10,10 @@
 #include "fp_config.h"
 
 namespace fp {
-    char *config::app_name;
+    char *config::app_name = NULL;
+    bool config::detach = false;
+    bool config::verbose = false;
+    bool config::debug = false;
     conf_t config::conf;
     wsgi_t config::wsgi;
     
@@ -29,7 +32,7 @@ namespace fp {
         in_file->open(file_name, std::fstream::in);
         
         if (!in_file->is_open()) {
-            printLine("Config error: unable to open file");
+            ts_cout("config: unable to open file");
             return -1;
         }
         
@@ -57,23 +60,23 @@ namespace fp {
                     group = line.substr(1, line.size()-2);
                     
                     if (group.size() == 0) {
-                        printLine("Config error: dummy group definition");
+                        ts_cout("config: missed group definition");
                         return -1;
                     }
                 } else {
-                    printLine("Config error: broken group definition");
+                    ts_cout("config: broken group definition");
                     return -1;
                 }
             } else {
                 if (group.size() == 0) {
-                    printLine("Config error: definition without group");
+                    ts_cout("config: definition without group");
                     return -1;
                 }
                 
                 size_t eq_pos = line.find("=");
                 
                 if (eq_pos == line.size() - 1 || eq_pos == std::string::npos) {
-                    printLine("Config error: declaration error");
+                    ts_cout("config: declaration error");
                     return -1;
                 } else {
                     std::string key, val;
@@ -96,7 +99,7 @@ namespace fp {
                         } else if (key.compare("accept_mutex") == 0) {
                             conf.accept_mt = toBool(val);
                         } else {
-                            printLine("Config warning: ignoring unknown key: "+ key);
+                            ts_cout("config: unknown key used: "+key);
                         }
                     } else if (group.compare("wsgi") == 0) {
                         if (key.compare("wsgi_path") == 0) {
@@ -108,12 +111,12 @@ namespace fp {
                         } else if (key.compare("wsgi_load_site") == 0) {
                             wsgi.load_site = toBool(val);
                         } else {
-                            printLine("Config warning: ignoring unknown key: "+ key);
+                            ts_cout("config: ignoring unknown key: "+ key);
                         }
                     } else if (group.compare("environment") == 0) {
                         
                     } else {
-                        printLine("Config error: i don`t know what do you want from me");
+                        ts_cout("config: i don`t know what do you want from me");
                         return -1;
                     }
                 }

@@ -27,10 +27,10 @@ namespace fp {
     
     struct child_t {
         ipc cipc;
-        time_t timestamp;
+        bool terminated;
     };
     
-    class fastPy: config, log {
+    class fastPy: public config, public log {
     public: 
         fastPy();
         ~fastPy();
@@ -38,9 +38,13 @@ namespace fp {
         int go(int argc, char **argv);
         
     private:
+        static bool able_to_work;
+        static bool csig_new;
+        static int csig_cnt;
+        static int csig;
+
         char *config_f;
         char *sock_f;
-        bool detach;
         std::map<int,child_t> childrens;
         
         fastcgi *fcgi;

@@ -14,14 +14,15 @@
 #include <map>
 #include <vector>
 
-#include "fp_core.h"
+#include "fp_log.h"
+#include "fp_helpers.h"
 
 namespace fp {
-
+    
     struct conf_t {
         std::string user;
         std::string group;
-
+        
         int workers_cnt;
         int threads_cnt;
         int workers_ttl;
@@ -33,16 +34,19 @@ namespace fp {
         std::string base_dir;
         std::string script;
         std::string point;
-
+        
         bool load_site;
     };
     
-    class config: public core {
+    class config {
     public:
         config();
         ~config();
 
         int readConf(char *file_name);
+        static bool detach;
+        static bool verbose;
+        static bool debug;
 
     private:
         std::ifstream *in_file;
