@@ -130,6 +130,7 @@ namespace fp {
             // some where in kenya(it`s our childrens)
             worker w(fcgi);
 
+            // we not checking exit codes because waitWorker is important
             w.startWorker();
             w.waitWorker();
             

@@ -14,6 +14,7 @@
 // posix threads and vector
 #include <pthread.h>
 #include <unistd.h>
+#include <signal.h>
 #include <vector>
 
 // core components
