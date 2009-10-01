@@ -19,6 +19,13 @@
 #include "fp_config.h"
 
 namespace fp {
+
+    typedef union semun {
+        int val;
+        struct semid_ds *st;
+        ushort * array;
+    } semun_t;
+    
     struct wdata_t {
         // this shm timestamp
         time_t timestamp;

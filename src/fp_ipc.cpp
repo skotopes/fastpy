@@ -20,7 +20,7 @@ namespace fp {
     
     int ipc::initSHM(int w_num, bool force_create) {
         int rset = 0666;
-        semun arg;
+        semun_t arg;
         
         if (force_create) {
             rset = rset | IPC_CREAT;
@@ -89,7 +89,7 @@ namespace fp {
     }
         
     int ipc::closeMQ(bool force_close) {
-        semun arg;
+        semun_t arg;
         
         if (shm == NULL) {
             return -1;
