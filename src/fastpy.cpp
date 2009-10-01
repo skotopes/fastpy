@@ -138,6 +138,8 @@ namespace fp {
             // lions and tigers
             child_t c;
             
+            c.terminated = false;
+            
             int e = c.cipc.initSHM(fpid, true);
             
             if (e < 0) {
@@ -200,7 +202,6 @@ namespace fp {
                     case W_FAIL:
                         break;
                     case W_TERM:
-                        c->terminated = true;
                         break;
                     default:
                         break;
@@ -209,10 +210,6 @@ namespace fp {
             }
             
             if (!csig_new) csig = 0;
-            if (childrens.size() == 0) {
-                able_to_die = true;
-                able_to_work = false;
-            }
             usleep(100000);
         }
 
