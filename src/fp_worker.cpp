@@ -132,6 +132,7 @@ namespace fp {
     int worker::acceptor() {
         FCGX_Request *r;
         handler *h;
+        int rc=0, ec=0;
         
         // Init request and handler
         r = new FCGX_Request;
@@ -149,18 +150,24 @@ namespace fp {
             }
             
             // accepting connection
-            int rc = fcgi->acceptRequest(r);
+            rc = fcgi->acceptRequest(r);
             
             pthread_mutex_unlock(&accept_mutex);
             
             // in case if some shit happens
             if (rc < 0) {
+                logError("acceptor", LOG_ERROR, "unable to accept, will try to continue ec: " + rc);
                 continue;
-                //break;
             }
             
             // procced request with handler
-            h->proceedRequest();
+            ec = h->proceedRequest();
+            
+            if (ec < 0) {
+                std::stringstream s;
+                s << "error while proceeding request: " << ec;
+                logError("acceptor", LOG_ERROR, s.str());
+            }
         }
         
         delete h;

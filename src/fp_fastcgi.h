@@ -32,6 +32,7 @@ namespace fp {
         int finishRequest(FCGX_Request *request);
         
         int error500(FCGX_Request *request, std::string output);
+        int error418(FCGX_Request *request, std::string output);
         
     private:
         static int fd;

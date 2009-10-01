@@ -164,7 +164,7 @@ namespace fp {
         signal(SIGUSR1, sig_handler);
         signal(SIGUSR2, sig_handler);
 
-        do {
+        while (able_to_work) {
             
             if (csig_new) {
                 csig_new = false;
@@ -174,6 +174,13 @@ namespace fp {
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 int c_pid = (*c_it).first;
                 child_t *c = &(*c_it).second;
+
+                // if child is terminated
+                if (c->terminated) {
+                    c->cipc.closeMQ(true);
+                    childrens.erase(c_it);
+                    break;
+                }
                 
                 c->cipc.lock();
                 if (csig_cnt != 0 && csig == SIGUSR1) {
@@ -193,6 +200,7 @@ namespace fp {
                     case W_FAIL:
                         break;
                     case W_TERM:
+                        c->terminated = true;
                         break;
                     default:
                         break;
@@ -201,12 +209,16 @@ namespace fp {
             }
             
             if (!csig_new) csig = 0;
+            if (childrens.size() == 0) {
+                able_to_die = true;
+                able_to_work = false;
+            }
             usleep(100000);
-        } while (able_to_work);
+        }
 
         logError("master", LOG_DEBUG, "terminating workers");
         // terminating processes
-        do {
+        while (!able_to_die) {
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 child_t *c = &(*c_it).second;
                 
@@ -228,7 +240,7 @@ namespace fp {
             }
             
             usleep(100000);
-        } while (!able_to_die);
+        }
 
         logError("master", LOG_DEBUG, "terminating master");
         return 0;

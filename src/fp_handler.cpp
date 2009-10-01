@@ -794,31 +794,35 @@ namespace fp {
         py->deleteThreadState(t);
     }
     
-    int handler::proceedRequest() {        
+    int handler::proceedRequest() {
+        int rc = 0;
+        
         if (py->isCallbackReady()) {
 
             // calling wsgi callback
             int ec = runModule();
             
             if (ec < 0) {
+                std::stringstream s;
+                
                 py->switchAndLockTC(t);
                 PyErr_Print();
                 py->nullAndUnlockTC(t);
                 
-                std::stringstream e;
-                e << "Handler execution failed with error code: "<< ec;
-                fcgi->error500(req, e.str());
+                s << "Handler execution failed with error code: " << ec;
+                fcgi->error500(req, s.str());
+                
+                rc = -2 + (ec*1000);
             }
         } else {
-            std::stringstream e;
-            e << "Unable to initialize handler";
-            fcgi->error500(req, e.str());
+            fcgi->error500(req, "WSGI Callback not ready");
+            rc = -1;
         }
                 
         // finishing request
         fcgi->finishRequest(req);
 
-        return 0;
+        return rc;
     }
         
     int handler::runModule() {
