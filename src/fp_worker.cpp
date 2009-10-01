@@ -75,7 +75,8 @@ namespace fp {
                 if (ec) {
                     return -2;
                 }
-                
+
+                t_count++;
                 threads.push_back(thread);
             }
 
@@ -242,7 +243,6 @@ namespace fp {
 
     void *worker::workerThread(void *data) {
         worker *w = (worker*) data;
-        t_count++;
         w->acceptor();
         t_count--;
         pthread_exit(NULL);

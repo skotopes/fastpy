@@ -56,8 +56,8 @@ namespace fp {
         
         if (force_create) {
             shm->timestamp = 0;
-            shm->m_code = 0;
-            shm->w_code = 0;
+            shm->m_code = M_NRDY;
+            shm->w_code = W_NRDY;
             shm->signal = 0;
             shm->threads_used = 0;
             shm->threads_free = 0;
