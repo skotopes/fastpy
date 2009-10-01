@@ -45,6 +45,8 @@ namespace fp {
         std::vector<pthread_t> threads;
         
         static bool able_to_work;
+        static bool able_to_die;
+
         static int t_count;
         static int wpid;
         static int csig;

@@ -12,6 +12,7 @@
 namespace fp {
     
     bool worker::able_to_work = true;
+    bool worker::able_to_die = false;
     int worker::t_count = 0;
     int worker::wpid = 0;
     int worker::csig = 0;
@@ -183,8 +184,6 @@ namespace fp {
     */
 
     int worker::scheduler() {
-        bool able_to_die = false;
-
         // sched service loop (normal work) 
         do {
             wipc.lock();
@@ -268,5 +267,19 @@ namespace fp {
 
     void worker::sigHandler(int sig_type) {
         csig = sig_type;
+        
+        switch (sig_type) {
+            case SIGABRT:
+            case SIGTERM:
+                able_to_work = false;
+                break;
+            default:
+                break;
+        }
+        
+        while (!able_to_die) {
+            usleep(10000);
+        }
+        exit(255);
     }
 }
