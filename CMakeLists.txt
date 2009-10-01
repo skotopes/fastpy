@@ -25,6 +25,11 @@ set(CMAKE_INSTALL_PREFIX "/usr")
 add_subdirectory ( src )
 include_directories ( src ${PYTHON_INCLUDE_PATH})
 
+MESSAGE("Looks like we can continue")
+MESSAGE("Python prefix ${PYTHON_PREFIX}")
+MESSAGE("Python include path ${PYTHON_INCLUDE_PATH}")
+MESSAGE("Python libraries ${PYTHON_LIBRARY}")
+
 set(fastpy_src
     src/fastpy.cpp
     src/fp_config.cpp
