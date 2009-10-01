@@ -829,7 +829,7 @@ namespace fp {
         PyObject *pReturn, *pArgs = NULL, *pEnviron = NULL;
         char *pOutput;
         headers_t h;
-        std::stringstream r;
+        std::string r;
 
         h.is_filled = false;
         h.is_sended = false;
@@ -879,7 +879,7 @@ namespace fp {
                 return -9;
             }
             
-            r << pOutput;
+            r.append(pOutput);
         } else if (PyIter_Check(pReturn)) {
             PyObject *pIter = PyObject_GetIter(pReturn);
             PyObject *pItem;
@@ -943,7 +943,7 @@ namespace fp {
                     return -11;
                 }
                 
-                r << pOutput;
+                r.append(pOutput);
                 Py_DECREF(sSobj);
             }
         } else {
@@ -964,7 +964,7 @@ namespace fp {
         }
         
         // looks like everything is ok and now we can send body
-        fcgi->writeResponse(req, r.str());
+        fcgi->writeResponse(req, r);
 
         return 0;
     }
