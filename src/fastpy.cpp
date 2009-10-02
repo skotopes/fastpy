@@ -131,7 +131,8 @@ namespace fp {
             std::map<int,child_t>::iterator c_it;
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 child_t *c = &(*c_it).second;
-                c->cipc.closeMQ(true);
+                // closing but not deleting
+                c->cipc.closeMQ();
                 childrens.erase(c_it);
             }
             

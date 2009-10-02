@@ -944,7 +944,8 @@ namespace fp {
                 }
                 
                 r.append(pOutput);
-                Py_DECREF(sSobj);
+                // 
+                // Py_DECREF(sSobj);
             }
         } else {
             // returned object of incompatible type, finish him.
