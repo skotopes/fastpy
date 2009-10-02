@@ -26,8 +26,7 @@ IF (CUSTOM_PYTHON)
     string(REGEX MATCH "[-][I]([^ ;])+" PYTHON_INCLUDE_PATH ${PYTHON_CONF_CFLAGS})
     string(REPLACE "-I" "" PYTHON_INCLUDE_PATH ${PYTHON_INCLUDE_PATH})
 
-    string(REGEX MATCHALL "[-][l]([^;])+" PYTHON_LIBRARY ${PYTHON_CONF_LIBS})
-    string(REPLACE "-l" "" PYTHON_LIBRARY ${PYTHON_LIBRARY})
+    string(REGEX MATCHALL "[-][l]([^;])+" PYTHON_LIBRARY ${PYTHON_LIBRARY})
 
     link_directories(${PYTHON_LINK_DIR})
 ELSE (CUSTOM_PYTHON)
@@ -57,7 +56,7 @@ set(fastpy_src
 
 add_executable (fastpy ${fastpy_src})
 
-target_link_libraries(fastpy pthread fcgi ${PYTHON_CONF_LIBS})
+target_link_libraries(fastpy pthread fcgi ${PYTHON_LIBRARY})
 set_target_properties(fastpy PROPERTIES VERSION 0.0.3 SOVERSION 0)
 
 ########### install files ###############
