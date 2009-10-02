@@ -127,6 +127,14 @@ namespace fp {
         int fpid = fork();
         
         if (fpid == 0) {
+            // removing shm zones and worker struct
+            std::map<int,child_t>::iterator c_it;
+            for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+                child_t *c = &(*c_it).second;
+                c->cipc.closeMQ(true);
+                childrens.erase(c_it);
+            }
+            
             // some where in kenya(it`s our childrens)
             worker w(fcgi);
 
