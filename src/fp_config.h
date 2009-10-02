@@ -41,7 +41,7 @@ namespace fp {
     class config {
     public:
         config();
-        ~config();
+        virtual ~config();
 
         int readConf(char *file_name);
         static bool detach;

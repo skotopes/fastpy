@@ -175,7 +175,7 @@ namespace fp {
             }
             
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
-                int c_pid = (*c_it).first;
+                //int c_pid = (*c_it).first;
                 child_t *c = &(*c_it).second;
 
                 // if child is terminated

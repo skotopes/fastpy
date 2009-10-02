@@ -144,7 +144,7 @@ namespace fp {
     class handler: public config {
     public:
         handler(fastcgi *f, FCGX_Request *r);
-        ~handler();
+        virtual ~handler();
 
         int proceedRequest();
         

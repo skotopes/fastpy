@@ -59,6 +59,6 @@ namespace fp {
         static void *schedulerThread(void *data);
         static void sigHandler(int sig_type);
     };
-};
+}
 
 #endif

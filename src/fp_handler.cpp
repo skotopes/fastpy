@@ -204,7 +204,7 @@ namespace fp {
     StartResponseObject *pyengine::newSRObject() {
         StartResponseObject * r = PyObject_NEW(StartResponseObject ,&StartResponseType);
         return r;
-    };
+    }
     
     PyTypeObject pyengine::StartResponseType = {
         PyObject_HEAD_INIT(NULL)
@@ -251,7 +251,7 @@ namespace fp {
     PyObject *pyengine::startResponse(PyObject *self, PyObject *args, PyObject *kw) {
         std::stringstream status, headers;
         StartResponseObject *s = (StartResponseObject*)self;
-        int rSize = PyTuple_Size(args);
+        Py_ssize_t rSize = PyTuple_Size(args);
         
         if ( s->h->is_filled == true) {
             PyErr_SetString(PyExc_StandardError, "Headers already set");
@@ -294,14 +294,14 @@ namespace fp {
         s->h->is_filled = true;
         
         return PyBool_FromLong(1);
-    };    
+    }
 
     /* ================================ pyengine::fast_stream */
     
     FastStreamObject *pyengine::newFSObject() {
         FastStreamObject * r = PyObject_NEW(FastStreamObject ,&FastStreamType);
         return r;
-    };    
+    }
     
     PyMemberDef pyengine::FastStreamMembers[] = {
         {NULL} /* Sentinel */
@@ -384,7 +384,7 @@ namespace fp {
     PyObject *pyengine::fcgi_Stream_read(FastStreamObject *self, PyObject *args) {
         FCGX_Stream *s;
         long bytesrequested = -1;
-        size_t bytesread, buffersize, chunksize;
+        Py_ssize_t bytesread, buffersize, chunksize;
         PyObject *v;
         
         fcgi_Stream_Check();
@@ -530,14 +530,14 @@ namespace fp {
     
     PyObject *pyengine::fcgi_Stream_readlines(FastStreamObject *self, PyObject *args) {
         int err;
-        long sizehint = 0;
-        size_t total = 0;
+        //long sizehint = 0;
+        size_t total = 0, sizehint = 0;
         PyObject *list;
         PyObject *l;
         
         fcgi_Stream_Check();
         
-        if (!PyArg_ParseTuple(args, "|l:readlines", &sizehint))
+        if (!PyArg_ParseTuple(args, "|k:readlines", &sizehint))
             return NULL;
         
         if ((list = PyList_New(0)) == NULL)
@@ -626,7 +626,7 @@ namespace fp {
         PyObject *list, *line;
         PyObject *it;   /* iter(seq) */
         PyObject *result;
-        int i, j, index, len, nwritten, islist;
+        Py_ssize_t i, j, index, len, nwritten, islist;
         
         fcgi_Stream_Check();
         
@@ -679,7 +679,7 @@ namespace fp {
                 PyObject *v = PyList_GET_ITEM(list, i);
                 if (!PyString_Check(v)) {
                     const char *buffer;
-                    int len;
+                    
                     if (PyObject_AsReadBuffer(v,
                                               (const void**)&buffer,
                                               (Py_ssize_t*)&len) ||
@@ -922,7 +922,7 @@ namespace fp {
             
             Py_DECREF(pIter);
         } else if (PyList_Check(pReturn)) {
-            int rSize = PyList_Size(pReturn);
+            Py_ssize_t rSize = PyList_Size(pReturn);
             
             for (int i=0; i<rSize; i++) {
                 // sSobj is borrowed reference so we DO NOT NEED to decrement reference count  

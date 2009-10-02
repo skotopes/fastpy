@@ -31,7 +31,7 @@ namespace fp {
     class log {
     public:
         log();
-        ~log();
+        virtual ~log();
 
         int openLogs(std::string a_log, std::string e_log);
         

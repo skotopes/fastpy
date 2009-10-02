@@ -24,6 +24,6 @@ namespace fp {
     int ts_cout(std::string str);
     int ts_cerr(std::string str);
 
-};
+}
 
 #endif
