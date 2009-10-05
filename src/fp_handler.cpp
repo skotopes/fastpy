@@ -16,6 +16,7 @@ namespace fp {
     PyThreadState *pyengine::mainThreadState = NULL;
     PyThreadState *pyengine::serviceThreadState = NULL;
     long pyengine::tc_allocated = 0;
+    bool pyengine::use_threads = true;
     
     pyengine::pyengine() {
         // initialize python threading environment
@@ -34,6 +35,7 @@ namespace fp {
     }
 
     int pyengine::createThreadState(thread_t &t) {
+        
         // creating python thread state
         PyEval_AcquireLock();
         t.mainInterpreterState = mainThreadState->interp;
@@ -48,10 +50,14 @@ namespace fp {
     }
     
     int pyengine::switchAndLockTC(thread_t &t) {
+        if (!use_threads) {
+            return 0;
+        }
+        
         if (!t.in_use) {
             PyEval_AcquireLock();
             PyThreadState_Swap(t.workerThreadState);
-            t.in_use = true;            
+            t.in_use = true;
         }
         
         return 0;
@@ -70,6 +76,10 @@ namespace fp {
     }
     
     int pyengine::nullAndUnlockTC(thread_t &t) {
+        if (!use_threads) {
+            return 0;
+        }
+
         if (t.in_use) {
             t.workerThreadState = PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
@@ -769,10 +779,11 @@ namespace fp {
     
     /* ================================ handler */
             
-    handler::handler(fastcgi *f, FCGX_Request *r) {
+    handler::handler(fastcgi *f, FCGX_Request *r, bool threads) {
         fcgi = f;
         req = r;
-
+        use_threads = threads;
+        
         py->createThreadState(t);
         py->switchAndLockTC(t);
 
@@ -781,7 +792,9 @@ namespace fp {
         pErrors = py->newFSObject();
         pCallback = py->getCallback();
         py->nullAndUnlockTC(t);
-
+        
+        if (!use_threads) py->serviceLockTC();
+        
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
         Py_INCREF(pSro);
@@ -791,6 +804,7 @@ namespace fp {
     }
     
     handler::~handler() {
+        if (!use_threads) py->serviceUnlockTC();
         py->deleteThreadState(t);
     }
     

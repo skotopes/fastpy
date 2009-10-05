@@ -108,7 +108,24 @@ namespace fp {
             logError("worker", LOG_DEBUG, "threads started");
         } else if (conf.threads_cnt == 0) {
             logError("worker", LOG_WARN, "thread count = 0, it means that multi-thread logic will be switched off");
+            pthread_t thread;
             
+            int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
+            
+            if (ec) {
+                return -2;
+            }
+            
+            threads_total++;
+            threads.push_back(thread);            
+
+            ec = pthread_create(&scheduller_thread, &attr, worker::schedulerThread, (void*)this);
+            
+            if (ec) {
+                return -3;
+            }            
+            
+            logError("worker", LOG_DEBUG, "threads started");
         } else {
             logError("worker", LOG_ERROR, "thread count cannot be less then 0, can`t continue");
             return -3;
