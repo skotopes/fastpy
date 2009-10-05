@@ -12,6 +12,7 @@
 
 #include <pthread.h>
 #include <sys/types.h>
+#include <stdarg.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -35,14 +36,14 @@ namespace fp {
 
         int openLogs(std::string a_log, std::string e_log);
         
-        int logAccess(std::string mod, std::string s);
-        int logError(std::string mod, logerr_e level, std::string s);
+        static int logAccess(std::string mod, std::string s);
+        static int logError(std::string mod, logerr_e level, std::string s, ...);
         
     private:
-        pid_t pid;
+        static pid_t pid;
         static pthread_mutex_t log_mutex;
-        static std::ofstream access_log_f;
-        static std::ofstream error_log_f;
+        static std::ofstream a_log_f;
+        static std::ofstream e_log_f;
     };
 }
 

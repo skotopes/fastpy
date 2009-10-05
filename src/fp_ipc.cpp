@@ -77,10 +77,9 @@ namespace fp {
         
         return 0;
     }
-    
+
     int ipc::unlock() {
         sembuf sb = {0, 1, 0};
-        shm->timestamp = time(NULL);
         
         if (semop(semid, &sb, 1) == -1) {
             return -1;
@@ -88,7 +87,7 @@ namespace fp {
         return 0;
     }
         
-    int ipc::closeMQ(bool force_close) {
+    int ipc::freeSHM(bool force_close) {
         semun_t arg;
         
         if (shm == NULL) {

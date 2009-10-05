@@ -71,7 +71,7 @@ namespace fp {
         int initSHM(int w_num, bool force_create=false);
         int lock();
         int unlock();
-        int closeMQ(bool force_close=false);
+        int freeSHM(bool force_close=false);
         
         wdata_t *shm;
         

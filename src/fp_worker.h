@@ -36,22 +36,22 @@ namespace fp {
         int waitWorker();
         
     private:
-        pyengine *py;
-        fastcgi *fcgi;
-        
-        pthread_mutex_t accept_mutex;
-        pthread_attr_t attr;
-        pthread_t scheduler_thread;
-        std::vector<pthread_t> threads;
-        
-        static bool able_to_work;
-        static bool able_to_die;
-
-        static int t_count;
+        static pyengine *py;
+        static fastcgi *fcgi;
         static int wpid;
-        static int csig;
         static ipc wipc;
 
+        static bool working;
+        static bool terminating;
+        static int threads_busy;
+        static int threads_total;
+        
+        static pthread_mutex_t serialize_mutex;
+        static pthread_t scheduller_thread;
+        
+        pthread_attr_t attr;
+        std::vector<pthread_t> threads;
+        
         int acceptor();
         int scheduler();
         

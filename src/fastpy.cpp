@@ -10,20 +10,36 @@
 #include "fastpy.h"
 
 namespace fp {
-    bool fastPy::able_to_work = true;
-    bool fastPy::csig_new = false;
-    int fastPy::csig_cnt = 0;
-    int fastPy::csig = 0;
+    // static members
+    int fastPy::msig = 0;
+
+    /*!
+        @method     fastPy::fastPy()
+        @abstract   class constructor
+        @discussion class constructor, nothing else
+    */
 
     fastPy::fastPy() {
         config_f = NULL;
         sock_f = NULL;
     }
     
+    /*!
+        @method     fastPy::~fastPy()
+        @abstract   class destructor
+        @discussion do nothing
+    */
+
     fastPy::~fastPy() {
         
     }
     
+    /*!
+        @method     fastPy::go(int argc, char **argv)
+        @abstract   entry point
+        @discussion parsing args, starting app
+    */
+
     int fastPy::go(int argc, char **argv) {
         int c;
         
@@ -57,116 +73,92 @@ namespace fp {
             return 254;
         }
         
-        
         if (readConf(config_f) < 0) {
             return 253;
         }
         
-        int ec = runFPy();
-
-        return ec;
-    }
-    
-    int fastPy::runFPy() {
         fcgi = new fastcgi;
         
         // opening socket
         if (fcgi->openSock(sock_f) < 0) {
+            logError("master", LOG_ERROR, "Unable to open socket");
             return 250;
         }
         
         if (detach) {
-            int fpid = fork();
-            
-            if (fpid == 0) {
-                // some where in kenya(it`s our childrens)
-                int fd = open("/dev/null", O_RDWR);
-                
-                if (fd == -1) {
-                    logError("master", LOG_ERROR, "Unable to open /dev/null");
-                    return 252;
-                }
-                
-                if (dup2(fd, STDIN_FILENO) == -1) {
-                    logError("master", LOG_ERROR, "Unable to close stdin");
-                    return 252;
-                }
-                
-                if (dup2(fd, STDOUT_FILENO) == -1) {
-                    logError("master", LOG_ERROR, "Unable to close stdout");
-                    return 252;
-                }
-                                
-                if (fd > STDERR_FILENO) {
-                    if (close(fd) == -1) {
-                    logError("master", LOG_ERROR, "Unable to close stderr");
-                        return 252;
-                    }
-                }
-            } else if (fpid > 0) {
+            int d_rc = detachProc();
+            if (d_rc > 0) {
+                // write pid file here
                 return 0;
-            } else {
-                return -1;
+            } else if (d_rc < 0) {
+                return 249;
             }
         } 
-
-        // forking and working
+        
         for (int i=0; i < conf.workers_cnt; i++) {
-            createChild();
+            startChild();
         }
         
-        if (yesMaster() < 0) {
-            return 251;
+        if (masterLoop() < 0) {
+            return 248;
         }
-
+        
         return 0;
     }
-    
 
-    int fastPy::createChild() {
+    /*!
+        @method     fastPy::startChild()
+        @abstract   create child process
+        @discussion create child process return zero on success
+    */
+
+    int fastPy::startChild() {
         int fpid = fork();
         
         if (fpid == 0) {
-            // removing shm zones and worker struct
+            // removing shm zones and master structs
             std::map<int,child_t>::iterator c_it;
+            
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 child_t *c = &(*c_it).second;
                 // closing but not deleting
-                c->cipc.closeMQ();
-                childrens.erase(c_it);
+                c->cipc.freeSHM();
             }
             
-            // some where in kenya(it`s our childrens)
+            childrens.clear();
+            
+            // starting worker
             worker w(fcgi);
 
-            // we not checking exit codes because waitWorker is important
-            w.startWorker();
+            w.startWorker(); // we not checking exit codes because waitWorker is important
             w.waitWorker();
             
-            exit(0);                
+            exit(0);
         } else if (fpid > 0){
-            // lions and tigers
             child_t c;
-            
-            c.terminated = false;
             
             int e = c.cipc.initSHM(fpid, true);
             
             if (e < 0) {
-                logError("master", LOG_ERROR, "shm inialization failed");
+                logError("master", LOG_ERROR, "shm inialization failed with: %d", e);
                 return -1;
             }
-                        
+            
+            c.dead = false;
             childrens[fpid] = c;
+            return 0;
         } else {
             return -1;
         }
-        
-        return 0;
     }
     
-    int fastPy::yesMaster() {
-        bool able_to_die = false;
+    /*!
+        @method     fastPy::masterLoop()
+        @abstract   worker scheduller
+        @discussion master loop and scheduller
+    */
+    
+    int fastPy::masterLoop() {
         std::map<int,child_t>::iterator c_it;
 
         // registering signal handler
@@ -176,99 +168,170 @@ namespace fp {
         signal(SIGUSR1, sig_handler);
         signal(SIGUSR2, sig_handler);
 
-        while (able_to_work) {
-            
-            if (csig_new) {
-                csig_new = false;
-                csig_cnt += conf.workers_cnt;
-            }
-            
-            for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
-                //int c_pid = (*c_it).first;
-                child_t *c = &(*c_it).second;
+        bool working = true, terminating = true;
 
-                // if child is terminated
-                if (c->terminated) {
-                    c->cipc.closeMQ(true);
+        logError("master", LOG_DEBUG, "schedulling workers");
+        // main schedule loop
+        while (working) {
+            // iterating throw the map
+            for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+                child_t *c = &(*c_it).second;
+                
+                if (c->dead) {
+                    c->cipc.freeSHM(true);
                     childrens.erase(c_it);
+                    startChild();
                     break;
                 }
                 
                 c->cipc.lock();
-                if (csig_cnt != 0 && csig == SIGUSR1) {
-                    c->cipc.shm->m_code = M_DRLD;
-                    csig_cnt --;
+                
+                if (c->cipc.shm->timestamp != 0 && (c->cipc.shm->timestamp + 10) < time(NULL)) {
+                    logError("master", LOG_DEBUG, "child ts is timed out, terminating child");
+                    c->cipc.freeSHM(true);
+                    childrens.erase(c_it);
+                    startChild();
+                    break;
                 }
                 
                 switch (c->cipc.shm->w_code) {
-                    case W_NRDY:
-                        break;
-                    case W_FINE:
-                        break;
-                    case W_IRLD:
-                        break;
-                    case W_BUSY:
-                        break;
-                    case W_FAIL:
-                        break;
                     case W_TERM:
+                        c->dead = true;
                         break;
                     default:
                         break;
                 }
+                
                 c->cipc.unlock();
             }
             
-            if (!csig_new) csig = 0;
-            usleep(100000);
-        }
+            // checking our own state
+            if (msig != 0) {
+                switch (msig) {
+                    case SIGTERM:
+                    case SIGINT:
+                        working = false;
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-        logError("master", LOG_DEBUG, "terminating workers");
-        // terminating processes
-        while (!able_to_die) {
+            usleep(200000);
+        }
+        
+        logError("master", LOG_WARN, "going to shutdown");
+
+        for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+            child_t *c = &(*c_it).second;
+            
+            c->cipc.lock();
+            c->cipc.shm->m_code = M_TERM;
+            c->cipc.unlock();
+        }
+        
+        // main terminate loop
+        while (terminating) {            
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 child_t *c = &(*c_it).second;
-                
-                // if child is terminated
-                if (c->terminated) {
-                    c->cipc.closeMQ(true);
+
+                if (c->dead) {
+                    c->cipc.freeSHM(true);
                     childrens.erase(c_it);
                     break;
                 }
                 
+                // TODO: probably lock is not required here
                 c->cipc.lock();
-                c->cipc.shm->m_code = M_TERM;
-                if (c->cipc.shm->w_code == W_TERM) c->terminated = true;
+
+                if (c->cipc.shm->w_code == W_TERM) {
+                    c->dead = true;
+                }
+                
                 c->cipc.unlock();
             }
             
             if (childrens.size() == 0) {
-                able_to_die = true;
+                break;
             }
-            
-            usleep(100000);
-        }
 
-        logError("master", LOG_DEBUG, "terminating master");
+            usleep(10000);
+        }
+        
+        logError("master", LOG_WARN, "terminating master");
+        
         return 0;
     }
+
+    /*!
+        @method     fastPy::detachProc()
+        @abstract   detach from console
+        @discussion service routine, probably should be moved out of here
+    */
+
+    int fastPy::detachProc() {
+        pid_t fpid = fork();
+        
+        if (fpid == 0) {
+            // some where in kenya(it`s our childrens)
+            int fd = open("/dev/null", O_RDWR);
+            
+            if (fd == -1) {
+                logError("master", LOG_ERROR, "Unable to open /dev/null");
+                return -1;
+            }
+            
+            if (dup2(fd, STDIN_FILENO) == -1) {
+                logError("master", LOG_ERROR, "Unable to close stdin");
+                return -1;
+            }
+            
+            if (dup2(fd, STDOUT_FILENO) == -1) {
+                logError("master", LOG_ERROR, "Unable to close stdout");
+                return -1;
+            }
+            
+            if (fd > STDERR_FILENO) {
+                if (close(fd) == -1) {
+                    logError("master", LOG_ERROR, "Unable to close stderr");
+                    return -1;
+                }
+            }
+            
+            return 0;
+        } else if (fpid > 0) {
+            return fpid;
+        } else {
+            logError("master", LOG_ERROR, "Unable to fork");
+            return -2;
+        }
+    }
     
+    /*!
+        @method     fastPy::usage()
+        @abstract   usage information
+        @discussion usage information (non thread safe)
+    */
+
     void fastPy::usage() {
-        std::cout << "Usage:"<< std::endl
-            << "fastpy OPTIONS"<< std::endl
+        std::cout << "Usage:" << "fastpy OPTIONS"<< std::endl
             << std::endl
             << "Options:"<< std::endl
             << "-s [unix_socket]"<< std::endl
             << "-c [config_file]"<< std::endl
             << "-d \t\t- detach from console"<< std::endl
-            << "-h \t\t- help"<< std::endl
-            << "-v \t\t- verbose output(more v - more verbose)"<< std::endl;
+            << "-v \t\t- verbose output(-vv - for debug messages)"<< std::endl
+            << "-h \t\t- help"<< std::endl;
     }
+    
+    /*!
+        @method     fastPy::sig_handler(int s)
+        @abstract   signal handler
+        @discussion 
+    */
 
     void fastPy::sig_handler(int s) {
-        if (s == SIGTERM || s == SIGINT) able_to_work = false;
-        csig = s;
-        csig_new = true;
+        msig = s;
     }
 }
 

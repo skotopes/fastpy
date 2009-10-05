@@ -96,8 +96,6 @@ namespace fp {
                             
                         } else if (key.compare("group") == 0) {
                             
-                        } else if (key.compare("accept_mutex") == 0) {
-                            conf.accept_mt = toBool(val);
                         } else {
                             ts_cout("config: unknown key used: "+key);
                         }

@@ -11,15 +11,10 @@
 
 namespace fp {
     // some static stuff
-    bool fastcgi::inited = false;
     int fastcgi::fd;
 
     fastcgi::fastcgi() {
-        // initialize accept mutex 
-        if (!inited) {
-            // initialize fastcgi environment and open socket
-            FCGX_Init();
-        }
+        FCGX_Init();
     }
     
     fastcgi::~fastcgi() {
@@ -27,6 +22,10 @@ namespace fp {
     
     int fastcgi::openSock(char *socket) {
         fd = FCGX_OpenSocket(socket, 5000);
+
+        if (fd < 0) {
+            return -1;
+        }
         
         return 0;
     }
@@ -39,9 +38,7 @@ namespace fp {
     }
 
     int fastcgi::acceptRequest(FCGX_Request *request) {
-        int rc=0;
-        
-        rc = FCGX_Accept_r(request);
+        int rc = FCGX_Accept_r(request);
         
         return rc;
     }
@@ -61,7 +58,7 @@ namespace fp {
                      "Status: 418 I'm a teapot\r\n"
                      "Content-type: text/html\r\n"
                      "\r\n"
-                     "<title>Cofee not ready</title>"
+                     "<title>Cofee machine not ready</title>"
                      "<h1>%s</h1>", output.c_str());
         return 0;
     }

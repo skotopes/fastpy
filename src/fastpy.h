@@ -27,7 +27,7 @@ namespace fp {
     
     struct child_t {
         ipc cipc;
-        bool terminated;
+        bool dead;
     };
     
     class fastPy: public config, public log {
@@ -38,21 +38,16 @@ namespace fp {
         int go(int argc, char **argv);
         
     private:
-        static bool able_to_work;
-        static bool csig_new;
-        static int csig_cnt;
-        static int csig;
-
+        fastcgi *fcgi;
         char *config_f;
         char *sock_f;
+        static int msig;
+        
         std::map<int,child_t> childrens;
-        
-        fastcgi *fcgi;
-        
- 
-        int runFPy();
-        int createChild();
-        int yesMaster();
+
+        int startChild();
+        int masterLoop();
+        int detachProc();
         
         void usage();
         static void sig_handler(int s);

@@ -10,62 +10,80 @@
 #include "fp_worker.h"
 
 namespace fp {
-    
-    bool worker::able_to_work = true;
-    bool worker::able_to_die = false;
-    int worker::t_count = 0;
-    int worker::wpid = 0;
-    int worker::csig = 0;
+
+    // static members 
+    pyengine *worker::py        = NULL;
+    fastcgi *worker::fcgi       = NULL;
+    int worker::wpid            = 0;
     ipc worker::wipc;
+
+    bool worker::working        = true;
+    bool worker::terminating    = true;
+    int worker::threads_busy    = 0;
+    int worker::threads_total   = 0;
+
+    pthread_mutex_t worker::serialize_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_t worker::scheduller_thread;
     
+    /*!
+        @method     worker::worker(fastcgi *fc)
+        @abstract   class consrtuctor
+        @discussion 
+    */
+
     worker::worker(fastcgi *fc) {
-        logError("worker", LOG_DEBUG, "starting worker");
-        wpid = getpid();
         fcgi = fc;
         py = new pyengine();
-        
+        wpid = getpid();
         // init joinable threads
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        pthread_mutex_init(&accept_mutex, NULL);
 
         signal(SIGHUP, sigHandler);
         signal(SIGINT, sigHandler);
         signal(SIGABRT, sigHandler);
         signal(SIGTERM, sigHandler);
-        logError("worker", LOG_DEBUG, "worker initialization compleate");        
     }
-    
-    worker::~worker() {
 
+    /*!
+        @method     worker::~worker()
+        @abstract   class destructor
+        @discussion class destructor, do nothing
+    */
+
+    worker::~worker() {
+        
     }
     
     int worker::startWorker() {
-        // init types
+        // initializing context
         logError("worker", LOG_DEBUG, "initing types and python environment");
+
         if (wipc.initSHM(wpid,true) < 0) {
-            logError("worker", LOG_DEBUG, "unable to initialize shm, probably system limit exceeded");
+            logError("worker", LOG_ERROR, "unable to initialize shm, probably system limit exceeded");
             return -1;
         }
         
         if (py->typeInit() < 0) {
-            logError("worker", LOG_ERROR, "type initialization error");
+            logError("worker", LOG_ERROR, "python type initialization error");
             return -1;
         }
         
         if (py->setPath() < 0) {
-            logError("worker", LOG_ERROR, "path change error");
+            logError("worker", LOG_ERROR, "python path change error");
             return -1;
         } 
         
         if (py->initCallback() < 0) {
-            logError("worker", LOG_ERROR, "callback initialization error");
+            logError("worker", LOG_ERROR, "python callback initialization error");
             return -1;
-        }              
+        }
+
+        logError("worker", LOG_DEBUG, "environment initialization finished");
         
         if (conf.threads_cnt > 0) {
             logError("worker", LOG_DEBUG, "starting threads");
-            threads.reserve(conf.threads_cnt + 1);
+            threads.reserve(conf.threads_cnt);
             
             // starting worker threads
             for (int i=0;i < conf.threads_cnt;i++) {
@@ -77,20 +95,22 @@ namespace fp {
                     return -2;
                 }
 
-                t_count++;
+                threads_total++;
                 threads.push_back(thread);
             }
 
-            // starting schedule thread            
-            int ec = pthread_create(&scheduler_thread, &attr, worker::schedulerThread, (void*)this);
+            int ec = pthread_create(&scheduller_thread, &attr, worker::schedulerThread, (void*)this);
             
             if (ec) {
-                return -2;
-            }
-                        
+                return -3;
+            }            
+            
             logError("worker", LOG_DEBUG, "threads started");
+        } else if (conf.threads_cnt == 0) {
+            logError("worker", LOG_WARN, "thread count = 0, it means that multi-thread logic will be switched off");
+            
         } else {
-            logError("worker", LOG_ERROR, "thread count less or equal to 0, can`t continue");
+            logError("worker", LOG_ERROR, "thread count cannot be less then 0, can`t continue");
             return -3;
         }
         
@@ -108,10 +128,11 @@ namespace fp {
         
         for (t_it = threads.begin(); t_it < threads.end(); t_it++) {
             pthread_join((*t_it), NULL);
+            threads_total--;
         }
-        
-        pthread_join(scheduler_thread, NULL);
 
+        logError("worker", LOG_DEBUG, "threads finished, releasing callback");
+        
         py->releaseCallback();
 
         // Let`s inform master about our death
@@ -119,7 +140,7 @@ namespace fp {
         wipc.shm->w_code = W_TERM;
         wipc.unlock();
         
-        wipc.closeMQ();
+        wipc.freeSHM();
         logError("worker", LOG_DEBUG, "worker process is finished");
 
         return 0;
@@ -134,102 +155,101 @@ namespace fp {
     int worker::acceptor() {
         FCGX_Request *r;
         handler *h;
-        int rc=0, ec=0;
         
-        // Init request and handler
+        // Init request
         r = new FCGX_Request;
         fcgi->initRequest(r);
+        
+        // Init handler
         h = new handler(fcgi, r);
-
+        
         // accept loop
-        while (able_to_work) {
+        while (working) {
+            int f_rc=0, h_rc=0;
             
-            pthread_mutex_lock(&accept_mutex);
+            pthread_mutex_lock(&serialize_mutex);
             
-            if (!able_to_work) {
-                pthread_mutex_unlock(&accept_mutex);
+            if (!working) {
+                pthread_mutex_unlock(&serialize_mutex);
                 break;
             }
-            
+                
             // accepting connection
-            rc = fcgi->acceptRequest(r);
+            f_rc = fcgi->acceptRequest(r);
+
+            threads_busy++;
             
-            pthread_mutex_unlock(&accept_mutex);
+            pthread_mutex_unlock(&serialize_mutex);
             
             // in case if some shit happens
-            if (rc < 0) {
-                logError("acceptor", LOG_ERROR, "unable to accept, will try to continue ec: " + rc);
+            if (f_rc < 0) {
+                logError("acceptor", LOG_ERROR, "unable to accept, will try to continue error code: %d", f_rc);
                 continue;
             }
             
             // procced request with handler
-            ec = h->proceedRequest();
+            h_rc = h->proceedRequest();
             
-            if (ec < 0) {
-                std::stringstream s;
-                s << "error while proceeding request: " << ec;
-                logError("acceptor", LOG_ERROR, s.str());
+            if (h_rc < 0) {
+                logError("acceptor", LOG_ERROR, "error while proceeding request: %d", h_rc);
             }
+            
+            threads_busy--;
         }
-        
+                
+        // deallocating handler
         delete h;
         
         return 0;
     }
-    
-    /*!
-        @method     int worker::scheduler()
-        @abstract   scheduller routine
-        @discussion scheduller routine and main loop
-    */
 
     int worker::scheduler() {
-        // sched service loop (normal work) 
-        do {
+
+        wipc.lock();
+        wipc.shm->w_code = W_FINE;
+        wipc.unlock();
+        
+        while (working) {
+            
             wipc.lock();
+            wipc.shm->timestamp = time(NULL);
+            
             switch (wipc.shm->m_code) {
-                case M_NRDY:
-                    break;
-                case M_FINE:
-                    wipc.shm->signal = csig;
-                    break;
-                case M_SKIP:
-                    break;
-                case M_DRLD:
-                    py->reloadCallback();
-                    wipc.shm->m_code = M_FINE;
-                    logError("worker", LOG_WARN, "reloading app code");
-                    break;
                 case M_TERM:
-                    able_to_work = false;
+                    working = false;
                     break;
                 default:
                     break;
             }
+            
             wipc.unlock();
             
             usleep(250000);
-        } while (able_to_work);
-
-        // sched service loop (terminating everything)
-        int to = 20;
-        do {
-            if (t_count == 0) able_to_die = true;
+        }
+        
+        int timeout = time(NULL) + 5;
+        
+        while (terminating) {
+            wipc.lock();
+            wipc.shm->timestamp = time(NULL);
             
-            if (to == 0) {
-                wipc.lock();
+            if (timeout < time(NULL)) {
                 wipc.shm->w_code = W_TERM;
                 wipc.unlock();
+                wipc.freeSHM();
                 
-                wipc.closeMQ();
-                logError("worker", LOG_DEBUG, "terminating by timeout");
-                exit(0);
+                logError("scheduller", LOG_ERROR, "worker terminated by time out");
+                exit(1);
             }
             
-            to--;
-
-            usleep(100000);
-        } while (!able_to_die);
+            wipc.unlock();
+            
+            if (threads_total == 0) {
+                terminating = false; 
+            }
+            
+            usleep(10000);
+        }
         
         return 0;
     }
@@ -241,20 +261,19 @@ namespace fp {
     */
 
     void *worker::workerThread(void *data) {
-        worker *w = (worker*) data;
+        worker *w = (worker*)data;
         w->acceptor();
-        t_count--;
         pthread_exit(NULL);
     }
-
+    
     /*!
-        @method     void *worker::schedulerThread(void *data)
-        @abstract   run scheduller thread 
-        @discussion static callback for pthread_create, scheduller thread only
-    */
-
+     @method     void *worker::schedullerThread(void *data)
+     @abstract   run scheduller thread
+     @discussion 
+     */
+    
     void *worker::schedulerThread(void *data) {
-        worker *w = (worker*) data;
+        worker *w = (worker*)data;
         w->scheduler();
         pthread_exit(NULL);
     }
@@ -266,20 +285,26 @@ namespace fp {
     */
 
     void worker::sigHandler(int sig_type) {
-        csig = sig_type;
-        
         switch (sig_type) {
             case SIGABRT:
-            case SIGTERM:
-                able_to_work = false;
+                // die here
+                logError("worker", LOG_WARN, "got SIGABRT, emergency exit");
+                
+                wipc.lock();
+                wipc.shm->w_code = W_TERM;
+                wipc.shm->signal = sig_type;
+                wipc.unlock();
+                
+                exit(255);
                 break;
             default:
+                logError("worker", LOG_WARN, "got signal: %d, but i shouldn`t. passing signal to master", sig_type);
+
+                wipc.lock();
+                wipc.shm->signal = sig_type;
+                wipc.unlock();
+                
                 break;
         }
-        
-        while (!able_to_die) {
-            usleep(10000);
-        }
-        exit(255);
     }
 }

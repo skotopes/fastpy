@@ -36,7 +36,6 @@ namespace fp {
         
     private:
         static int fd;
-        static bool inited;
     };
 }
 

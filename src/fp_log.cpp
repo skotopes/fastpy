@@ -10,8 +10,9 @@
 #include "fp_log.h"
 
 namespace fp {
-    std::ofstream log::access_log_f;
-    std::ofstream log::error_log_f;
+    pid_t log::pid = 0;
+    std::ofstream log::a_log_f;
+    std::ofstream log::e_log_f;
     pthread_mutex_t log::log_mutex = PTHREAD_MUTEX_INITIALIZER;
     
     log::log() {
@@ -37,7 +38,7 @@ namespace fp {
         return 0;
     }
     
-    int log::logError(std::string mod, logerr_e level, std::string s) {
+    int log::logError(std::string mod, logerr_e level, std::string s, ...) {
         std::stringstream ss;
         
         time_t t = time(NULL);
@@ -57,8 +58,35 @@ namespace fp {
             ss << " error: ";
         }
         
-        ss << s;
+        va_list ap;
+        char *fmt = (char*)s.c_str();
+        char *s_va; int d_va;
         
+        va_start(ap, s);
+        while (*fmt) {
+            if (*fmt == '%') {
+                switch(char ft = *++fmt) {
+                    case 's':
+                        s_va = va_arg(ap, char *);
+                        ss << s_va;
+                        break;
+                    case 'd':
+                        d_va = va_arg(ap, int);
+                        ss << d_va;
+                        break;
+                    default:
+                        ss << "<unknown type: %" << ft << ">";
+                        break;
+                }
+            } else {
+                ss << *fmt;
+            }
+            
+            fmt++;
+        }
+        
+        va_end(ap);
+
         if (!config::detach) ts_cout(ss.str());
         
         return 0;
