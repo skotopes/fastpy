@@ -347,8 +347,8 @@ namespace fp {
             }            
         }        
         
-        if (initgroups(pd->pw_name, pd->pw_gid) == -1) {
-            logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, pd->pw_gid);
+        if (initgroups(pd->pw_name, to_gid) == -1) {
+            logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, to_gid);
             return -3;
         }
         
