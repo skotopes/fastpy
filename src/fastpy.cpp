@@ -335,6 +335,18 @@ namespace fp {
         
         to_gid = gr->gr_gid;
         
+        if (cr_gid != to_gid) {
+            if (cr_uid != 0) {
+                logError("master", LOG_ERROR, "unable to set gid: %d because i`m not root", to_gid);
+                return -4;
+            }
+            
+            if (setgid(to_gid) == -1) {
+                logError("master", LOG_ERROR, "unable to set gid: %d", to_gid);
+                return -5;
+            }            
+        }        
+        
         if (initgroups(pd->pw_name, pd->pw_gid) == -1) {
             logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, pd->pw_gid);
             return -3;
@@ -352,18 +364,6 @@ namespace fp {
             }
         }
         
-        if (cr_gid != to_gid) {
-            if (cr_uid != 0) {
-                logError("master", LOG_ERROR, "unable to set gid: %d because i`m not root", to_gid);
-                return -4;
-            }
-
-            if (setgid(to_gid) == -1) {
-                logError("master", LOG_ERROR, "unable to set gid: %d", to_gid);
-                return -5;
-            }            
-        }
-
         return 0;
     }
 
