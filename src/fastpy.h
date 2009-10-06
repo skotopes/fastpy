@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "fp_log.h"
 #include "fp_ipc.h"
@@ -48,6 +50,7 @@ namespace fp {
         int startChild();
         int masterLoop();
         int detachProc();
+        int changeID();
         
         void usage();
         static void sig_handler(int s);

@@ -85,6 +85,11 @@ namespace fp {
             return 250;
         }
         
+        if (changeID() < 0) {
+            logError("master", LOG_ERROR, "Unable start with user: %s and group: %s", conf.user.c_str(), conf.group.c_str());
+            return 249;
+        }
+        
         if (detach) {
             int d_rc = detachProc();
             if (d_rc > 0) {
@@ -306,7 +311,62 @@ namespace fp {
             return -2;
         }
     }
-    
+
+    int fastPy::changeID() {
+        passwd *pd;
+        group *gr;
+        uid_t cr_uid, cr_gid;
+        uid_t to_uid, to_gid;
+
+        cr_uid = geteuid();
+        cr_gid = getegid();
+        
+        if ((pd = getpwnam(conf.user.c_str())) == NULL) {
+            logError("master", LOG_ERROR, "username {%s} does not exist", conf.user.c_str());
+            return -1;
+        }
+        
+        to_uid = pd->pw_uid;
+        
+        if ((gr = getgrnam(conf.group.c_str())) == NULL) {
+            logError("master", LOG_ERROR, "group {%s} does not exist", conf.group.c_str());
+            return -2;
+        }
+        
+        to_gid = gr->gr_gid;
+        
+        if (initgroups(pd->pw_name, pd->pw_gid) == -1) {
+            logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, pd->pw_gid);
+            return -3;
+        }
+        
+        if (cr_uid != to_uid) {
+            if (cr_uid != 0) {
+                logError("master", LOG_ERROR, "unable to set uid: %d because i`m not root", to_uid);
+                return -4;
+            }
+            
+            if (setuid(to_uid) == -1) {
+                logError("master", LOG_ERROR, "unable to set uid: %d", to_uid);
+                return -4;
+            }
+        }
+        
+        if (cr_gid != to_gid) {
+            if (cr_uid != 0) {
+                logError("master", LOG_ERROR, "unable to set gid: %d because i`m not root", to_gid);
+                return -4;
+            }
+
+            if (setgid(to_gid) == -1) {
+                logError("master", LOG_ERROR, "unable to set gid: %d", to_gid);
+                return -5;
+            }            
+        }
+
+        return 0;
+    }
+
     /*!
         @method     fastPy::usage()
         @abstract   usage information

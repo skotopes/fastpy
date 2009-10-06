@@ -50,7 +50,7 @@ namespace fp {
 
     private:
         std::ifstream *in_file;
-        std::string group;
+        std::string tmp_group;
 
     protected:
         static char *app_name;

@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		230902B7107B5C41007C389E /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 230902B6107B5C41007C389E /* Python.framework */; };
 		23795F73107307D40025647F /* fp_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23795F72107307D40025647F /* fp_helpers.cpp */; };
-		23AD4C46106DC0A700B5E83F /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AD4C27106DB85700B5E83F /* Python.framework */; };
 		23AD4C97106E859E00B5E83F /* fp_ipc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23AD4C96106E859E00B5E83F /* fp_ipc.cpp */; };
 		23ADF4C21050756A004653CA /* fp_fastcgi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23ADF4C11050756A004653CA /* fp_fastcgi.cpp */; };
 		23BC5AC2105310BF00C2D606 /* fp_handler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23BC5AC1105310BF00C2D606 /* fp_handler.cpp */; };
@@ -20,10 +20,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		230902B6107B5C41007C389E /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = /Library/Frameworks/Python.framework; sourceTree = "<absolute>"; };
 		23795F71107307D40025647F /* fp_helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_helpers.h; sourceTree = "<group>"; };
 		23795F72107307D40025647F /* fp_helpers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_helpers.cpp; sourceTree = "<group>"; };
 		23795F8E10730A440025647F /* fastpy_cm.xcclassmodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcclassmodel; path = fastpy_cm.xcclassmodel; sourceTree = "<group>"; };
-		23AD4C27106DB85700B5E83F /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = /System/Library/Frameworks/Python.framework; sourceTree = "<absolute>"; };
 		23AD4C95106E859E00B5E83F /* fp_ipc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_ipc.h; sourceTree = "<group>"; };
 		23AD4C96106E859E00B5E83F /* fp_ipc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fp_ipc.cpp; sourceTree = "<group>"; };
 		23ADF4C01050756A004653CA /* fp_fastcgi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fp_fastcgi.h; sourceTree = "<group>"; };
@@ -51,8 +51,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23AD4C46106DC0A700B5E83F /* Python.framework in Frameworks */,
 				23D0A660104EECD3006785C9 /* libfcgi.dylib in Frameworks */,
+				230902B7107B5C41007C389E /* Python.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +130,7 @@
 		23D0A64F104EEB83006785C9 /* lib */ = {
 			isa = PBXGroup;
 			children = (
-				23AD4C27106DB85700B5E83F /* Python.framework */,
+				230902B6107B5C41007C389E /* Python.framework */,
 				23D0A65F104EECD3006785C9 /* libfcgi.dylib */,
 			);
 			name = lib;

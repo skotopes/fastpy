@@ -57,9 +57,9 @@ namespace fp {
             
             if (line.compare(0, 1, "[") == 0) {
                 if (line.compare(line.size()-1, 1, "]") == 0) {
-                    group = line.substr(1, line.size()-2);
+                    tmp_group = line.substr(1, line.size()-2);
                     
-                    if (group.size() == 0) {
+                    if (tmp_group.size() == 0) {
                         ts_cout("config: missed group definition");
                         return -1;
                     }
@@ -68,7 +68,7 @@ namespace fp {
                     return -1;
                 }
             } else {
-                if (group.size() == 0) {
+                if (tmp_group.size() == 0) {
                     ts_cout("config: definition without group");
                     return -1;
                 }
@@ -87,19 +87,19 @@ namespace fp {
                     trim(key);
                     trim(val);
                     
-                    if (group.compare("server") == 0) {
+                    if (tmp_group.compare("server") == 0) {
                         if (key.compare("workers") == 0) {
                             conf.workers_cnt = toInt(val);
                         } else if (key.compare("threads") == 0) {
                             conf.threads_cnt = toInt(val);
                         } else if (key.compare("user") == 0) {
-                            
+                            conf.user = val;
                         } else if (key.compare("group") == 0) {
-                            
+                            conf.group = val;
                         } else {
                             ts_cout("config: unknown key used: "+key);
                         }
-                    } else if (group.compare("wsgi") == 0) {
+                    } else if (tmp_group.compare("wsgi") == 0) {
                         if (key.compare("wsgi_path") == 0) {
                             wsgi.base_dir = val;
                         } else if (key.compare("wsgi_script") == 0) {
@@ -111,7 +111,7 @@ namespace fp {
                         } else {
                             ts_cout("config: ignoring unknown key: "+ key);
                         }
-                    } else if (group.compare("environment") == 0) {
+                    } else if (tmp_group.compare("environment") == 0) {
                         
                     } else {
                         ts_cout("config: i don`t know what do you want from me");

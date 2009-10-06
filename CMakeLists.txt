@@ -37,15 +37,15 @@ ELSE (CUSTOM_PYTHON)
     FIND_PACKAGE(PythonLibs)
 ENDIF (CUSTOM_PYTHON)
 
-MESSAGE("python env:
+MESSAGE("Python build env:
 \t Prefix: ${PYTHON_PREFIX} 
 \t Lib dir: ${PYTHON_LINK_DIR}
 \t Inludes dir: ${PYTHON_INCLUDE_PATH}
 \t Libs2link: ${PYTHON_LIBRARY}")
 
-set(CMAKE_INSTALL_PREFIX "/usr")
-add_subdirectory ( src )
-include_directories ( src ${PYTHON_INCLUDE_PATH})
+SET(CMAKE_INSTALL_PREFIX "/usr")
+add_subdirectory( src )
+include_directories( src ${PYTHON_INCLUDE_PATH})
 
 set(fastpy_src
     src/fastpy.cpp
@@ -58,10 +58,10 @@ set(fastpy_src
     src/fp_helpers.cpp
 )
 
-add_executable (fastpy ${fastpy_src})
+add_executable(fastpy ${fastpy_src})
 
 target_link_libraries(fastpy pthread fcgi ${PYTHON_LIBRARY})
-set_target_properties(fastpy PROPERTIES VERSION 0.0.3 SOVERSION 0)
+set_target_properties(fastpy PROPERTIES VERSION 0.0.4 SOVERSION 0)
 
 ########### install files ###############
 

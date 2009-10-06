@@ -67,7 +67,7 @@ namespace fp {
             if (*fmt == '%') {
                 switch(char ft = *++fmt) {
                     case 's':
-                        s_va = va_arg(ap, char *);
+                        s_va = va_arg(ap, char*);
                         ss << s_va;
                         break;
                     case 'd':
