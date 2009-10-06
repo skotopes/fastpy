@@ -66,7 +66,7 @@ namespace fp {
                     return 255;
             }        
         }
-        
+
         if (config_f == NULL || sock_f == NULL) {
             ts_cout("Config and socket is required");
             usage();
@@ -76,6 +76,11 @@ namespace fp {
         if (readConf(config_f) < 0) {
             return 253;
         }
+
+        if (changeID() < 0) {
+            logError("master", LOG_ERROR, "Unable start with user: %s and group: %s", conf.user.c_str(), conf.group.c_str());
+            return 249;
+        }
         
         fcgi = new fastcgi;
         
@@ -84,12 +89,7 @@ namespace fp {
             logError("master", LOG_ERROR, "Unable to open socket");
             return 250;
         }
-        
-        if (changeID() < 0) {
-            logError("master", LOG_ERROR, "Unable start with user: %s and group: %s", conf.user.c_str(), conf.group.c_str());
-            return 249;
-        }
-        
+                
         if (detach) {
             int d_rc = detachProc();
             if (d_rc > 0) {
@@ -312,6 +312,12 @@ namespace fp {
         }
     }
 
+    /*!
+        @method     fastPy::changeID()
+        @abstract   change uid and gid
+        @discussion get uid and git from named and set them if we can
+    */
+
     int fastPy::changeID() {
         passwd *pd;
         group *gr;
@@ -344,14 +350,14 @@ namespace fp {
             if (setgid(to_gid) == -1) {
                 logError("master", LOG_ERROR, "unable to set gid: %d", to_gid);
                 return -5;
+            }
+            
+            if (initgroups(pd->pw_name, to_gid) == -1) {
+                logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, to_gid);
+                return -3;
             }            
         }        
-        
-        if (initgroups(pd->pw_name, to_gid) == -1) {
-            logError("master", LOG_ERROR, "initgroups(%s, %d) failed", pd->pw_name, to_gid);
-            return -3;
-        }
-        
+                
         if (cr_uid != to_uid) {
             if (cr_uid != 0) {
                 logError("master", LOG_ERROR, "unable to set uid: %d because i`m not root", to_uid);
