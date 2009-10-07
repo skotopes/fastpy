@@ -1037,7 +1037,9 @@ namespace fp {
         
         PyDict_SetItemString(dict, "wsgi.input", (PyObject *)pInput);
         PyDict_SetItemString(dict, "wsgi.errors", (PyObject *)pErrors);
-        
+
+        //TODO: replace with a check
+        PyDict_SetItemString(dict, "wsgi.url_scheme", PyString_FromString("http"));
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
