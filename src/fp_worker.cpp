@@ -33,7 +33,13 @@ namespace fp {
 
     worker::worker(fastcgi *fc) {
         fcgi = fc;
-        py = new pyengine();
+
+        if (conf.threads_cnt == 0) {
+            py = new pyengine(false);
+        } else {
+            py = new pyengine(true);    
+        }
+        
         wpid = getpid();
         // init joinable threads
         pthread_attr_init(&attr);

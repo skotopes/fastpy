@@ -79,7 +79,7 @@ namespace fp {
     // python engine and manipulators only
     class pyengine: config {
     public:
-        pyengine();
+        pyengine(bool trds);
         ~pyengine();
 
         // thread state switchers
@@ -142,7 +142,7 @@ namespace fp {
 
     class handler: public config {
     public:
-        handler(fastcgi *f, FCGX_Request *r, bool threads = true);
+        handler(fastcgi *f, FCGX_Request *r);
         virtual ~handler();
 
         int proceedRequest();
@@ -152,7 +152,6 @@ namespace fp {
         fastcgi *fcgi;
         FCGX_Request *req;
         
-        bool use_threads;
         thread_t t;
         StartResponseObject *pSro;
         FastStreamObject *pInput;

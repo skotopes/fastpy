@@ -17,22 +17,33 @@ namespace fp {
     long pyengine::tc_allocated = 0;
     bool pyengine::use_threads = true;
     
-    pyengine::pyengine() {
+    pyengine::pyengine(bool trds) {
+        use_threads = trds;
+        
         // initialize python threading environment
         Py_SetProgramName(app_name);
         Py_InitializeEx(0);
-        PyEval_InitThreads();
-        mainThreadState = PyThreadState_Get();
-        PyEval_ReleaseLock();
+
+        if (use_threads) {
+            PyEval_InitThreads();
+            mainThreadState = PyThreadState_Get();
+            PyEval_ReleaseLock();            
+        }
     }
     
     pyengine::~pyengine() {
         // Destroying GIL and finalizing python interpritator
-        PyEval_RestoreThread(mainThreadState);
+        if (use_threads) {
+            PyEval_RestoreThread(mainThreadState);            
+        }
+
         Py_Finalize();
     }
 
     int pyengine::createThreadState(thread_t &t) {
+        if (!use_threads) {
+            return 0;
+        }
         
         // creating python thread state
         PyEval_AcquireLock();
@@ -62,12 +73,20 @@ namespace fp {
     }
     
     int pyengine::mainLockTC() {
+        if (!use_threads) {
+            return 0;
+        }
+
         PyEval_AcquireLock();
         PyThreadState_Swap(mainThreadState);
         return 0;
     }
     
     int pyengine::mainUnlockTC() {
+        if (!use_threads) {
+            return 0;
+        }
+
         mainThreadState = PyThreadState_Swap(NULL);
         PyEval_ReleaseLock();
         return 0;
@@ -88,6 +107,10 @@ namespace fp {
     }
     
     int pyengine::deleteThreadState(thread_t &t) {
+        if (!use_threads) {
+            return 0;
+        }
+        
         // Worker thread state is not needed any more
         PyEval_AcquireLock();
         PyThreadState_Swap(NULL);
@@ -109,14 +132,13 @@ namespace fp {
         PySys_SetPath((char*)path_final.c_str());
         
         if (wsgi.load_site) {
-            PyEval_AcquireLock();
-            PyThreadState_Swap(mainThreadState);
+            mainLockTC();
+            
             // such a stupid shit, dunno why i should do it here
             PyRun_SimpleString("import site\n"
                                "site.main()\n");
-            
-            mainThreadState = PyThreadState_Swap(NULL);
-            PyEval_ReleaseLock();
+
+            mainUnlockTC();
         }
         
         return 0;
@@ -749,10 +771,9 @@ namespace fp {
     
     /* ================================ handler */
             
-    handler::handler(fastcgi *f, FCGX_Request *r, bool threads) {
+    handler::handler(fastcgi *f, FCGX_Request *r) {
         fcgi = f;
         req = r;
-        use_threads = threads;
         
         py->createThreadState(t);
         py->switchAndLockTC(t);
@@ -762,9 +783,7 @@ namespace fp {
         pErrors = py->newFSObject();
         pCallback = py->getCallback();
         py->nullAndUnlockTC(t);
-        
-        if (!use_threads) py->mainLockTC();
-        
+                
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
         Py_INCREF(pSro);
@@ -774,7 +793,6 @@ namespace fp {
     }
     
     handler::~handler() {
-        if (!use_threads) py->mainUnlockTC();
         py->deleteThreadState(t);
     }
     
