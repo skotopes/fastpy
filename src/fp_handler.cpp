@@ -839,7 +839,6 @@ namespace fp {
         pSro->h = &h;
         
         pArgs = PyTuple_Pack(2, pEnviron, pSro);
-        Py_DECREF(pEnviron);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(pCallback, pArgs);
