@@ -52,7 +52,6 @@ namespace fp {
     */
 
     worker::~worker() {
-        delete py;
     }
     
     int worker::startWorker() {
@@ -157,6 +156,7 @@ namespace fp {
         logError("worker", LOG_DEBUG, "threads finished, releasing callback");
         
         py->releaseCallback();
+        delete py;
 
         // Let`s inform master about our death
         wipc.lock();
