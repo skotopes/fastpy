@@ -52,27 +52,33 @@ namespace fp {
     */
 
     worker::~worker() {
-        
+        delete py;
     }
     
     int worker::startWorker() {
         // initializing context
-        logError("worker", LOG_DEBUG, "initing types and python environment");
+        logError("worker", LOG_DEBUG, "service initing shared memory");
 
         if (wipc.initSHM(wpid,true) < 0) {
             logError("worker", LOG_ERROR, "unable to initialize shm, probably system limit exceeded");
             return -1;
         }
         
+        logError("worker", LOG_DEBUG, "initing python types");
+
         if (py->typeInit() < 0) {
             logError("worker", LOG_ERROR, "python type initialization error");
             return -1;
         }
         
+        logError("worker", LOG_DEBUG, "initing python path");
+        
         if (py->setPath() < 0) {
             logError("worker", LOG_ERROR, "python path change error");
             return -1;
         } 
+
+        logError("worker", LOG_DEBUG, "initing python callback");
         
         if (py->initCallback() < 0) {
             logError("worker", LOG_ERROR, "python callback initialization error");

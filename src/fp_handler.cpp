@@ -14,7 +14,6 @@ namespace fp {
     /* ================================ python */
     
     PyThreadState *pyengine::mainThreadState = NULL;
-    PyThreadState *pyengine::serviceThreadState = NULL;
     long pyengine::tc_allocated = 0;
     bool pyengine::use_threads = true;
     
@@ -24,13 +23,12 @@ namespace fp {
         Py_InitializeEx(0);
         PyEval_InitThreads();
         mainThreadState = PyThreadState_Get();
-        serviceThreadState = PyThreadState_New(mainThreadState->interp);
         PyEval_ReleaseLock();
     }
     
     pyengine::~pyengine() {
         // Destroying GIL and finalizing python interpritator
-        PyEval_AcquireLock();
+        PyEval_RestoreThread(mainThreadState);
         Py_Finalize();
     }
 
@@ -63,14 +61,14 @@ namespace fp {
         return 0;
     }
     
-    int pyengine::serviceLockTC() {
+    int pyengine::mainLockTC() {
         PyEval_AcquireLock();
-        PyThreadState_Swap(serviceThreadState);
+        PyThreadState_Swap(mainThreadState);
         return 0;
     }
     
-    int pyengine::serviceUnlockTC() {
-        serviceThreadState = PyThreadState_Swap(NULL);
+    int pyengine::mainUnlockTC() {
+        mainThreadState = PyThreadState_Swap(NULL);
         PyEval_ReleaseLock();
         return 0;
     }
@@ -112,12 +110,12 @@ namespace fp {
         
         if (wsgi.load_site) {
             PyEval_AcquireLock();
-            PyThreadState_Swap(serviceThreadState);
+            PyThreadState_Swap(mainThreadState);
             // such a stupid shit, dunno why i should do it here
             PyRun_SimpleString("import site\n"
                                "site.main()\n");
             
-            serviceThreadState = PyThreadState_Swap(NULL);
+            mainThreadState = PyThreadState_Swap(NULL);
             PyEval_ReleaseLock();
         }
         
@@ -139,7 +137,7 @@ namespace fp {
     PyObject *pyengine::pFunc = NULL;
 
     int pyengine::initCallback() {
-        serviceLockTC();
+        mainLockTC();
         
         // getting srcipt object
         PyObject *pScript = PyString_FromString(wsgi.script.c_str());
@@ -151,7 +149,7 @@ namespace fp {
         // if pModule was imported prperly we will be able to continue
         if (pModule == NULL) {
             PyErr_Print();
-            serviceUnlockTC();
+            mainUnlockTC();
             return -1;
         }
         
@@ -162,42 +160,14 @@ namespace fp {
             Py_XDECREF(pFunc);
             Py_DECREF(pModule);
             PyErr_Print();
-            serviceUnlockTC();
+            mainUnlockTC();
             return -2;
         }
         
         cbr_flag = true;
 
-        serviceUnlockTC();
+        mainUnlockTC();
         
-        return 0;
-    }
-
-    int pyengine::reloadCallback() {
-        serviceLockTC();
-        
-        PyObject *m = PyImport_ReloadModule(pModule);
-        
-        if (m == NULL) {
-            PyErr_Print();
-            serviceUnlockTC();
-            return -1;
-        }
-
-        PyObject *f = PyObject_GetAttrString(m, (char *)wsgi.point.c_str());
-        
-        if (f == NULL || !PyCallable_Check(f)) {
-            Py_XDECREF(f);
-            Py_DECREF(m);
-            PyErr_Print();
-            serviceUnlockTC();
-            return -2;
-        }
-        
-        pModule = m;
-        pFunc = f;
-        
-        serviceUnlockTC();
         return 0;
     }
     
@@ -793,7 +763,7 @@ namespace fp {
         pCallback = py->getCallback();
         py->nullAndUnlockTC(t);
         
-        if (!use_threads) py->serviceLockTC();
+        if (!use_threads) py->mainLockTC();
         
         Py_INCREF(pInput);
         Py_INCREF(pErrors);
@@ -804,7 +774,7 @@ namespace fp {
     }
     
     handler::~handler() {
-        if (!use_threads) py->serviceUnlockTC();
+        if (!use_threads) py->mainUnlockTC();
         py->deleteThreadState(t);
     }
     

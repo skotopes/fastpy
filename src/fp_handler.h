@@ -84,9 +84,9 @@ namespace fp {
 
         // thread state switchers
         int createThreadState(thread_t &t);
+        int mainLockTC();
+        int mainUnlockTC();
         int switchAndLockTC(thread_t &t);
-        int serviceLockTC();
-        int serviceUnlockTC();
         int nullAndUnlockTC(thread_t &t);
         int deleteThreadState(thread_t &t);
         
@@ -96,7 +96,6 @@ namespace fp {
         
         // wsgi callback module routines
         int initCallback();
-        int reloadCallback();
         inline bool isCallbackReady() {return cbr_flag;};
         inline PyObject *getCallback() {return pFunc;};
         int releaseCallback();
@@ -109,7 +108,6 @@ namespace fp {
         
     private:
         static PyThreadState *mainThreadState;
-        static PyThreadState *serviceThreadState;
         static long tc_allocated;
         static bool use_threads;
 
