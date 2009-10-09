@@ -253,7 +253,7 @@ namespace fp {
             PyErr_SetString(PyExc_StandardError, "Headers already set");
         }
         
-        if (rSize == 2) {
+        if (rSize == 2 || rSize == 3) {
             PyObject *pRC, *pHA;
             pRC = PyTuple_GetItem(args, 0); 
             pHA = PyTuple_GetItem(args, 1);
@@ -263,7 +263,7 @@ namespace fp {
             }
             
             if (!PyString_Check(pRC)||!PyList_Check(pHA)) {
-                PyErr_SetString(PyExc_TypeError, "Wrong arguments passed to start_response(string and list expected)");
+                PyErr_SetString(PyExc_TypeError, "Wrong argument type passed to start_response(<string>, <list>, [exc_info]) expected");
             }
 
             status << "Status: " << (char*)PyString_AsString(pRC) << "\r\n";
@@ -289,7 +289,7 @@ namespace fp {
 
         s->h->is_filled = true;
         
-        return PyBool_FromLong(1);
+        Py_RETURN_NONE;
     }
 
     /* ================================ pyengine::fast_stream */
