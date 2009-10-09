@@ -249,7 +249,7 @@ namespace fp {
         StartResponseObject *s = (StartResponseObject*)self;
         Py_ssize_t rSize = PyTuple_Size(args);
         
-        if ( s->h->is_filled == true) {
+        if ( s->h->is_filled == true && rSize == 2) {
             PyErr_SetString(PyExc_StandardError, "Headers already set");
         }
         
