@@ -23,7 +23,7 @@ namespace fp {
     int worker::threads_total   = 0;
 
     pthread_mutex_t worker::serialize_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_t worker::scheduller_thread;
+    pthread_t worker::scheduler_thread;
     
     /*!
         @method     worker::worker(fastcgi *fc)
@@ -110,7 +110,7 @@ namespace fp {
                 threads.push_back(thread);
             }
 
-            int ec = pthread_create(&scheduller_thread, &attr, worker::schedulerThread, (void*)this);
+            int ec = pthread_create(&scheduler_thread, &attr, worker::schedulerThread, (void*)this);
             
             if (ec) {
                 return -3;
@@ -130,7 +130,7 @@ namespace fp {
             threads_total++;
             threads.push_back(thread);            
 
-            ec = pthread_create(&scheduller_thread, &attr, worker::schedulerThread, (void*)this);
+            ec = pthread_create(&scheduler_thread, &attr, worker::schedulerThread, (void*)this);
             
             if (ec) {
                 return -3;
@@ -267,7 +267,7 @@ namespace fp {
                 wipc.unlock();
                 wipc.freeSHM();
                 
-                logError("scheduller", LOG_ERROR, "worker terminated by time out");
+                logError("scheduler", LOG_ERROR, "worker terminated by time out");
                 exit(1);
             }
             
@@ -296,8 +296,8 @@ namespace fp {
     }
     
     /*!
-     @method     void *worker::schedullerThread(void *data)
-     @abstract   run scheduller thread
+     @method     void *worker::schedulerThread(void *data)
+     @abstract   run scheduler thread
      @discussion 
      */
     

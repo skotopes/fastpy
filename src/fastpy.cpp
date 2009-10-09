@@ -159,8 +159,8 @@ namespace fp {
     
     /*!
         @method     fastPy::masterLoop()
-        @abstract   worker scheduller
-        @discussion master loop and scheduller
+        @abstract   worker scheduler
+        @discussion master loop and scheduler
     */
     
     int fastPy::masterLoop() {

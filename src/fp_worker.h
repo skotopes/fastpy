@@ -47,7 +47,7 @@ namespace fp {
         static int threads_total;
         
         static pthread_mutex_t serialize_mutex;
-        static pthread_t scheduller_thread;
+        static pthread_t scheduler_thread;
         
         pthread_attr_t attr;
         std::vector<pthread_t> threads;

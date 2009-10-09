@@ -19,8 +19,12 @@
 
 /* 
  * fast stream code based on Cody Pisto python-fastcgi
- * mostly it`s old python file object code, 
+ * mostly it`s old python file object code,
+ *
  * TODO: MUST BE REPLACED IN FUTURE
+ * TODO: environ dictionary probably not pep333 compatiable (utf8 and strings)
+ * probably refactoring required
+ * basic type refactoring is done, should work fine 
  */
 
 #define BUF(v) PyString_AS_STRING((PyStringObject *)v)
@@ -163,7 +167,6 @@ namespace fp {
         int sendHeaders(headers_t &h);
         int initArgs(PyObject *dict);
         int releaseArgs(PyObject *dict);
-        
     };    
     
 }

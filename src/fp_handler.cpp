@@ -34,16 +34,15 @@ namespace fp {
     pyengine::~pyengine() {
         // Destroying GIL and finalizing python interpritator
         if (use_threads) {
-            PyEval_RestoreThread(mainThreadState);            
+            PyEval_RestoreThread(mainThreadState);
         }
 
         Py_Finalize();
     }
 
     int pyengine::createThreadState(thread_t &t) {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
         
         // creating python thread state
         PyEval_AcquireLock();
@@ -59,9 +58,8 @@ namespace fp {
     }
     
     int pyengine::switchAndLockTC(thread_t &t) {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
         
         if (!t.in_use) {
             PyEval_AcquireLock();
@@ -73,9 +71,8 @@ namespace fp {
     }
     
     int pyengine::mainLockTC() {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
 
         PyEval_AcquireLock();
         PyThreadState_Swap(mainThreadState);
@@ -83,9 +80,8 @@ namespace fp {
     }
     
     int pyengine::mainUnlockTC() {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
 
         mainThreadState = PyThreadState_Swap(NULL);
         PyEval_ReleaseLock();
@@ -93,9 +89,8 @@ namespace fp {
     }
     
     int pyengine::nullAndUnlockTC(thread_t &t) {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
 
         if (t.in_use) {
             t.workerThreadState = PyThreadState_Swap(NULL);
@@ -107,9 +102,8 @@ namespace fp {
     }
     
     int pyengine::deleteThreadState(thread_t &t) {
-        if (!use_threads) {
+        if (!use_threads)
             return 0;
-        }
         
         // Worker thread state is not needed any more
         PyEval_AcquireLock();
@@ -1029,7 +1023,7 @@ namespace fp {
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
-        PyDict_SetItemString(dict, "FASTPY_TC_NUMBER", PyInt_FromLong(t.tc_number));
+        PyDict_SetItemString(dict, "fastpy.t_context", PyInt_FromLong(t.tc_number));
         
         return 0;
     }
