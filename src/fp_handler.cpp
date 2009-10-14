@@ -1025,6 +1025,7 @@ namespace fp {
         PyDict_SetItemString(dict, "wsgi.url_scheme", wsgiUrlScheme);
         Py_DECREF(wsgiUrlScheme);
         
+        // TODO: looks like PyBool_FromLong ob_refcnt 1 and itzs not properly cleanuping him self
         PyDict_SetItemString(dict, "wsgi.input", (PyObject *)pInput);
         PyDict_SetItemString(dict, "wsgi.errors", (PyObject *)pErrors);
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
