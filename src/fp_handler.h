@@ -166,7 +166,6 @@ namespace fp {
 
         int sendHeaders(headers_t &h);
         int initArgs(PyObject *dict);
-        int releaseArgs(PyObject *dict);
     };    
     
 }

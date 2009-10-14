@@ -268,7 +268,8 @@ namespace fp {
             }
             
             if (!PyString_Check(pRC)||!PyList_Check(pHA)) {
-                PyErr_SetString(PyExc_TypeError, "Wrong argument type passed to start_response(<string>, <list>, [exc_info]) expected");
+                PyErr_SetString(PyExc_TypeError, 
+                                "Wrong argument type passed. start_response(<string>, <list>, [exc_info]) expected");
             }
 
             status << "Status: " << (char*)PyString_AsString(pRC) << "\r\n";
@@ -800,21 +801,22 @@ namespace fp {
         
         if (py->isCallbackReady()) {
 
+            py->switchAndLockTC(t);
+
             // calling wsgi callback
             int ec = runModule();
             
             if (ec < 0) {
                 std::stringstream s;
-                
-                py->switchAndLockTC(t);
                 PyErr_Print();
-                py->nullAndUnlockTC(t);
                 
                 s << "Handler execution failed with error code: " << ec;
                 fcgi->error500(req, s.str());
                 
                 rc = -2 + (ec*1000);
             }
+            
+            py->nullAndUnlockTC(t);
         } else {
             fcgi->error500(req, "WSGI Callback not ready");
             rc = -1;
@@ -830,16 +832,12 @@ namespace fp {
         PyObject *pReturn, *pArgs = NULL, *pEnviron = NULL;
         char *pOutput;
         headers_t h;
-        std::string r;
 
         h.is_filled = false;
         h.is_sended = false;
         
-        if (pCallback == NULL)
+        if (pCallback == NULL || pSro == NULL)
             return -1;
-        
-        // From this point we have to know in wich thread state we want to put env
-        py->switchAndLockTC(t);
         
         pEnviron = PyDict_New();
         
@@ -849,37 +847,44 @@ namespace fp {
         if (initArgs(pEnviron) < 0)
             return -3;
         
-        if (pSro == NULL) {
-            return -4;
-        }
-        
         pSro->h = &h;
         
         pArgs = PyTuple_Pack(2, pEnviron, pSro);
+        Py_DECREF(pEnviron);
         
         // Calling our stuff
         pReturn = PyObject_CallObject(pCallback, pArgs);
-        
-        releaseArgs(pArgs);
-        Py_DECREF(pEnviron);
+        Py_DECREF(pArgs);
         
         // in case if something goes wrong
         if (pReturn == NULL) {
-            return -5;
+            return -4;
         }
         
         // checking call result
         if (PyString_Check(pReturn)) {
-            // get char array
+            // get char array   
             pOutput = PyString_AsString(pReturn);
             
             // stringToChar failed, freeing result and return to main cycle
             if (pOutput == NULL) {
                 Py_DECREF(pReturn);
-                return -9;
+                return -5;
             }
             
-            r.append(pOutput);
+            // now sending headers and response
+            if (sendHeaders(h) < 0) {
+                // probably headers not set
+                return -6;
+            }
+            
+            // looks like everything is ok and now we can send body
+            fcgi->writeResponse(req, pOutput);
+
+            // if everything fine we can decriment reference count
+            Py_DECREF(pReturn);
+            return 0;
+            
         } else if (PyIter_Check(pReturn)) {
             PyObject *pIter = PyObject_GetIter(pReturn);
             PyObject *pItem;
@@ -889,7 +894,6 @@ namespace fp {
             }
             
             if (sendHeaders(h) < 0) {
-                // probably headers not set
                 return -13;
             }
             
@@ -920,11 +924,19 @@ namespace fp {
             }
             
             Py_DECREF(pIter);
+            Py_DECREF(pReturn);
+            
+            return 0;
+            
         } else if (PyList_Check(pReturn)) {
             Py_ssize_t rSize = PyList_Size(pReturn);
             
+            if (sendHeaders(h) < 0) {
+                return -13;
+            }
+            
             for (int i=0; i<rSize; i++) {
-                // sSobj is borrowed reference so we DO NOT NEED to decrement reference count  
+                // sSobj is borrowed reference so we DO NOT NEED to decrement reference count
                 PyObject* sSobj = PyList_GetItem(pReturn, i);
                 
                 // Check if returned object is string
@@ -942,31 +954,17 @@ namespace fp {
                     return -11;
                 }
                 
-                r.append(pOutput);
-                // 
-                // Py_DECREF(sSobj);
+                fcgi->writeResponse(req, pOutput);
             }
+            
+            Py_DECREF(pReturn);
+            return 0;
+            
         } else {
             // returned object of incompatible type, finish him.
             Py_DECREF(pReturn);
             return -12;
         }
-
-        // if everything fine we can decriment reference count
-        Py_DECREF(pReturn);
-
-        py->nullAndUnlockTC(t);
-
-        // now sending headers and response 
-        if (sendHeaders(h) < 0) {
-            // probably headers not set
-            return -13;
-        }
-        
-        // looks like everything is ok and now we can send body
-        fcgi->writeResponse(req, r);
-
-        return 0;
     }
 
     int handler::sendHeaders(headers_t &h) {
@@ -1012,7 +1010,6 @@ namespace fp {
             Py_DECREF(k);
             Py_DECREF(v);
         }
-        
         // standart wsgi attributes
         PyObject * wsgiVersion = PyTuple_New(2);
         PyTuple_SetItem(wsgiVersion, 0, PyInt_FromLong(1));
@@ -1029,13 +1026,7 @@ namespace fp {
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
         PyDict_SetItemString(dict, "fastpy.t_context", PyInt_FromLong(t.tc_number));
-        
-        return 0;
-    }
-    
-    int handler::releaseArgs(PyObject *dict) {
-        PyDict_Clear(dict);
-        Py_XDECREF(dict);
+
         return 0;
     }
 }
