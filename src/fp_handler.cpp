@@ -1010,18 +1010,23 @@ namespace fp {
             Py_DECREF(k);
             Py_DECREF(v);
         }
+        
         // standart wsgi attributes
-        PyObject * wsgiVersion = PyTuple_New(2);
+        PyObject * wsgiVersion;
+        PyObject * wsgiUrlScheme;
+        
+        wsgiVersion = PyTuple_New(2);
         PyTuple_SetItem(wsgiVersion, 0, PyInt_FromLong(1));
         PyTuple_SetItem(wsgiVersion, 1, PyInt_FromLong(0));
         PyDict_SetItemString(dict, "wsgi.version", wsgiVersion);
         Py_DECREF(wsgiVersion);
         
+        wsgiUrlScheme = PyString_FromString("http");
+        PyDict_SetItemString(dict, "wsgi.url_scheme", wsgiUrlScheme);
+        Py_DECREF(wsgiUrlScheme);
+        
         PyDict_SetItemString(dict, "wsgi.input", (PyObject *)pInput);
         PyDict_SetItemString(dict, "wsgi.errors", (PyObject *)pErrors);
-
-        //TODO: replace with a check
-        PyDict_SetItemString(dict, "wsgi.url_scheme", PyString_FromString("http"));
         PyDict_SetItemString(dict, "wsgi.multiprocess", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.multithread", PyBool_FromLong(1));
         PyDict_SetItemString(dict, "wsgi.run_once", PyBool_FromLong(0));
