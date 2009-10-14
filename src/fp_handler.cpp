@@ -199,6 +199,7 @@ namespace fp {
     
     StartResponseObject *pyengine::newSRObject() {
         StartResponseObject * r = PyObject_NEW(StartResponseObject ,&StartResponseType);
+        r->h = NULL;
         return r;
     }
     
@@ -248,6 +249,10 @@ namespace fp {
         std::stringstream status, headers;
         StartResponseObject *s = (StartResponseObject*)self;
         Py_ssize_t rSize = PyTuple_Size(args);
+
+        if ( s->h == NULL) {
+            PyErr_SetString(PyExc_StandardError, "NULL-ed start_response object called");
+        }
         
         if ( s->h->is_filled == true && rSize == 2) {
             PyErr_SetString(PyExc_StandardError, "Headers already set");
