@@ -34,12 +34,13 @@ namespace fp {
     
         int startWorker();
         int waitWorker();
+        int nowaitWorker();
         
     private:
         static pyengine *py;
         static fastcgi *fcgi;
         static int wpid;
-        static ipc wipc;
+        static ipc_shm wipc;
 
         static bool working;
         static bool terminating;

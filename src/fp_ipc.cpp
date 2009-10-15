@@ -11,16 +11,17 @@
 
 namespace fp {
     
-    ipc::ipc() {
+    /* IPC shared memory */
+    
+    ipc_shm::ipc_shm() {
         shm = NULL;
     }
     
-    ipc::~ipc() {
+    ipc_shm::~ipc_shm() {
     }
     
-    int ipc::initSHM(int w_num, bool force_create) {
+    int ipc_shm::initSHM(int w_num, bool force_create) {
         int rset = 0666;
-        semun_t arg;
         
         if (force_create) {
             rset = rset | IPC_CREAT;
@@ -35,21 +36,11 @@ namespace fp {
         if ((shmid = shmget(key, sizeof(wdata_t), rset)) == -1) {
             return -2;
         }
-
-        if ((semid = semget(key, 1, rset)) == -1) {
-            return -3;
-        }
         
         // attach shared memory
         void *sh_ptr = shmat(shmid, NULL, 0);
         if (sh_ptr == (void *)(-1) || sh_ptr == NULL) {
             return -4;
-        }
-
-        // initialize semaphore to 1
-        arg.val = 1;
-        if (semctl(semid, 0, SETVAL, arg) == -1) {
-            return -5;
         }
         
         shm = (struct wdata_t*) sh_ptr;
@@ -67,29 +58,8 @@ namespace fp {
         
         return 0;
     }
-    
-    int ipc::lock() {
-        sembuf sb = {0, -1, 0};
-
-        if (semop(semid, &sb, 1) == -1) {
-            return -1;
-        }
-        
-        return 0;
-    }
-
-    int ipc::unlock() {
-        sembuf sb = {0, 1, 0};
-        
-        if (semop(semid, &sb, 1) == -1) {
-            return -1;
-        }
-        return 0;
-    }
-        
-    int ipc::freeSHM(bool force_close) {
-        semun_t arg;
-        
+            
+    int ipc_shm::freeSHM(bool force_close) {        
         if (shm == NULL) {
             return -1;
         }
@@ -99,14 +69,75 @@ namespace fp {
         }
                 
         if (force_close) {
-            if (semctl(semid, 0, IPC_RMID, arg) == -1) {
-                return -3;
-            }
-            
             shmctl(shmid, IPC_RMID, NULL);
         }
         
         return 0;
     }
 
+    /* IPC semaphore */
+    
+    ipc_sem::ipc_sem() {
+    }
+    
+    ipc_sem::~ipc_sem() {
+    }
+    
+    int ipc_sem::initSEM(int w_num, bool force_create) {
+        int rset = 0666;
+        semun_t arg;
+        
+        if (force_create) {
+            rset = rset | IPC_CREAT;
+        }
+        
+        // creating key
+        if ((key = ftok(app_name, w_num)) == -1) {
+            return -1;
+        }
+                
+        if ((semid = semget(key, 1, rset)) == -1) {
+            return -3;
+        }
+        
+        // initialize semaphore to 1
+        arg.val = 1;
+        if (semctl(semid, 0, SETVAL, arg) == -1) {
+            return -5;
+        }
+        
+        return 0;
+    }
+    
+    int ipc_sem::lock() {
+        sembuf sb = {0, -1, 0};
+        
+        if (semop(semid, &sb, 1) == -1) {
+            return -1;
+        }
+        
+        return 0;
+    }
+    
+    int ipc_sem::unlock() {
+        sembuf sb = {0, 1, 0};
+        
+        if (semop(semid, &sb, 1) == -1) {
+            return -1;
+        }
+        return 0;
+    }
+    
+    int ipc_sem::freeSEM(bool force_close) {
+        semun_t arg;
+                        
+        if (force_close) {
+            if (semctl(semid, 0, IPC_RMID, arg) == -1) {
+                return -3;
+            }
+        }
+        
+        return 0;
+    }
+    
 }

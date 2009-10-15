@@ -63,14 +63,12 @@ namespace fp {
         uint64_t conn_failed;
     };
         
-    class ipc: public config {
+    class ipc_shm: public config {
     public:
-        ipc();
-        ~ipc();
+        ipc_shm();
+        ~ipc_shm();
         
         int initSHM(int w_num, bool force_create=false);
-        int lock();
-        int unlock();
         int freeSHM(bool force_close=false);
         
         wdata_t *shm;
@@ -78,6 +76,20 @@ namespace fp {
     private:
         key_t key;
         int shmid;
+    };
+
+    class ipc_sem: public config {
+    public:
+        ipc_sem();
+        ~ipc_sem();
+        
+        int initSEM(int w_num, bool force_create=false);
+        int lock();
+        int unlock();
+        int freeSEM(bool force_close=false);
+        
+    private:
+        key_t key;
         int semid;
     };
     

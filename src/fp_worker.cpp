@@ -15,7 +15,7 @@ namespace fp {
     pyengine *worker::py        = NULL;
     fastcgi *worker::fcgi       = NULL;
     int worker::wpid            = 0;
-    ipc worker::wipc;
+    ipc_shm worker::wipc;
 
     bool worker::working        = true;
     bool worker::terminating    = true;
@@ -64,8 +64,8 @@ namespace fp {
         // initializing context
         logError("worker", LOG_DEBUG, "service initing shared memory");
 
-        if (wipc.initSHM(wpid,true) < 0) {
-            logError("worker", LOG_ERROR, "unable to initialize shm, probably system limit exceeded");
+        if (wipc.initSHM(wpid) < 0) {
+            logError("worker", LOG_ERROR, "unable to attach to shm zone, probably system limit exceeded");
             return -1;
         }
         
@@ -165,16 +165,27 @@ namespace fp {
         delete py;
 
         // Let`s inform master about our death
-        wipc.lock();
         wipc.shm->w_code = W_TERM;
-        wipc.unlock();
-        
         wipc.freeSHM();
-        logError("worker", LOG_DEBUG, "worker process is finished");
+        
+        logError("worker", LOG_WARN, "worker process is finished");
 
         return 0;
     }
 
+    /*!
+     @method     int worker::nowaitWorker()
+     @abstract   terminate withou wait 
+     @discussion small ceanup and terminate
+     */
+    
+    int worker::nowaitWorker() {
+        wipc.shm->w_code = W_FAIL;
+        wipc.freeSHM();
+        
+        return 0;
+    }
+    
     /*!
         @method     int worker::acceptor()
         @abstract   acceptor routine
@@ -234,13 +245,10 @@ namespace fp {
 
     int worker::scheduler() {
 
-        wipc.lock();
         wipc.shm->w_code = W_FINE;
-        wipc.unlock();
         
         while (working) {
             
-            wipc.lock();
             wipc.shm->timestamp = time(NULL);
             
             switch (wipc.shm->m_code) {
@@ -251,7 +259,6 @@ namespace fp {
                     break;
             }
             
-            wipc.unlock();
             
             usleep(250000);
         }
@@ -259,19 +266,16 @@ namespace fp {
         int timeout = time(NULL) + 5;
         
         while (terminating) {
-            wipc.lock();
             wipc.shm->timestamp = time(NULL);
             
             if (timeout < time(NULL)) {
                 wipc.shm->w_code = W_TERM;
-                wipc.unlock();
                 wipc.freeSHM();
                 
                 logError("scheduler", LOG_ERROR, "worker terminated by time out");
                 exit(1);
             }
             
-            wipc.unlock();
             
             if (threads_total == 0) {
                 terminating = false; 
@@ -319,19 +323,14 @@ namespace fp {
                 // die here
                 logError("worker", LOG_WARN, "got SIGABRT, emergency exit");
                 
-                wipc.lock();
                 wipc.shm->w_code = W_TERM;
                 wipc.shm->signal = sig_type;
-                wipc.unlock();
                 
                 exit(255);
                 break;
             default:
                 logError("worker", LOG_WARN, "got signal: %d, but i shouldn`t. passing signal to master", sig_type);
-
-                wipc.lock();
                 wipc.shm->signal = sig_type;
-                wipc.unlock();
                 
                 break;
         }

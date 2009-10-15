@@ -28,7 +28,7 @@
 namespace fp {
     
     struct child_t {
-        ipc cipc;
+        ipc_shm cipc;
         bool dead;
     };
     

@@ -118,9 +118,22 @@ namespace fp {
     */
 
     int fastPy::startChild() {
+        static int sem_id = 99999;  // process number cannot be more then 65535,
+                                    // so we can use any higher ids
+        ipc_sem s;
+
+        sem_id++;
+        
+        s.initSEM(sem_id);
+        s.lock();
+        
         int fpid = fork();
         
         if (fpid == 0) {
+            int ec;
+            
+            s.lock();
+            
             // removing shm zones and master structs
             std::map<int,child_t>::iterator c_it;
             
@@ -134,9 +147,18 @@ namespace fp {
             
             // starting worker
             worker w(fcgi);
-
-            w.startWorker(); // we not checking exit codes because waitWorker is important
-            w.waitWorker();
+            
+            s.unlock();
+            s.freeSEM(true);
+            
+            ec = w.startWorker();
+            
+            if (ec < 0) {
+                logError("master", LOG_ERROR, "unable to start worker: %d", ec);
+                w.nowaitWorker();
+            } else {
+                w.waitWorker();
+            }
             
             exit(0);
         } else if (fpid > 0){
@@ -151,6 +173,10 @@ namespace fp {
             
             c.dead = false;
             childrens[fpid] = c;
+
+            s.unlock();
+            s.freeSEM();
+            
             return 0;
         } else {
             return -1;
@@ -185,34 +211,44 @@ namespace fp {
                 if (c->dead) {
                     c->cipc.freeSHM(true);
                     childrens.erase(c_it);
+                    logError("master", LOG_WARN, "starting new child");
                     startChild();
                     break;
                 }
                 
-                c->cipc.lock();
-                
                 if (c->cipc.shm->timestamp != 0 && (c->cipc.shm->timestamp + 10) < time(NULL)) {
-                    logError("master", LOG_DEBUG, "child ts is timed out, terminating child");
+                    logError("master", LOG_WARN, "child ts is timed out, terminating child");
                     c->cipc.freeSHM(true);
                     childrens.erase(c_it);
                     startChild();
                     break;
                 }
-                
+                                
                 switch (c->cipc.shm->w_code) {
                     case W_TERM:
                         c->dead = true;
                         break;
+                    case W_FAIL:
+                        working = false;
+                        break;
                     default:
                         break;
                 }
-                
-                c->cipc.unlock();
             }
             
             // checking our own state
             if (msig != 0) {
                 switch (msig) {
+                    case SIGHUP:
+                        logError("master", LOG_WARN, "restarting workers pool");
+                        for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+                            child_t *c = &(*c_it).second;
+                            c->cipc.shm->m_code = M_TERM;
+                        }
+                        
+                        msig = 0;
+                        
+                        break;
                     case SIGTERM:
                     case SIGINT:
                         working = false;
@@ -230,30 +266,30 @@ namespace fp {
         for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
             child_t *c = &(*c_it).second;
             
-            c->cipc.lock();
             c->cipc.shm->m_code = M_TERM;
-            c->cipc.unlock();
         }
         
         // main terminate loop
         while (terminating) {            
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
                 child_t *c = &(*c_it).second;
-
+                                
                 if (c->dead) {
                     c->cipc.freeSHM(true);
                     childrens.erase(c_it);
                     break;
                 }
                 
-                // TODO: probably lock is not required here
-                c->cipc.lock();
+                if (c->cipc.shm->timestamp != 0 && (c->cipc.shm->timestamp + 10) < time(NULL)) {
+                    logError("master", LOG_DEBUG, "looks like child is already dead");
+                    c->cipc.freeSHM(true);
+                    childrens.erase(c_it);
+                    break;
+                }
 
-                if (c->cipc.shm->w_code == W_TERM) {
+                if (c->cipc.shm->w_code == W_TERM || c->cipc.shm->w_code == W_FAIL) {
                     c->dead = true;
                 }
-                
-                c->cipc.unlock();
             }
             
             if (childrens.size() == 0) {
@@ -263,7 +299,7 @@ namespace fp {
             usleep(10000);
         }
         
-        logError("master", LOG_WARN, "terminating master");
+        logError("master", LOG_WARN, "childs are dead, terminating master");
         
         return 0;
     }
