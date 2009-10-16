@@ -79,7 +79,12 @@ namespace fp {
 
         if (changeID() < 0) {
             logError("master", LOG_ERROR, "Unable start with user: %s and group: %s", conf.user.c_str(), conf.group.c_str());
-            return 249;
+            return 252;
+        }
+        
+        if (chdir(wsgi.base_dir.c_str()) < 0) {
+            logError("master", LOG_ERROR, "Unable to change working directory to <%s>, check ownership", wsgi.base_dir.c_str());
+            return 251;
         }
         
         fcgi = new fastcgi;
