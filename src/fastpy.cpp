@@ -123,20 +123,21 @@ namespace fp {
     */
 
     int fastPy::startChild() {
-        static int sem_id = 99999;  // process number cannot be more then 65535,
-                                    // so we can use any higher ids
+        int ec;
         ipc_sem s;
-
-        sem_id++;
+        static int sem_id = 99;     // random number here
+        sem_id++;                   // choosed by roll dice
         
-        s.initSEM(sem_id);
+        if ((ec = s.initSEM(sem_id)) < 0) {
+            logError("master", LOG_ERROR, "unable to init startup semaphore: %d", ec);
+            return -1;            
+        }
+
         s.lock();
         
         int fpid = fork();
         
-        if (fpid == 0) {
-            int ec;
-            
+        if (fpid == 0) {            
             s.lock();
             
             // removing shm zones and master structs
@@ -168,11 +169,9 @@ namespace fp {
             exit(0);
         } else if (fpid > 0){
             child_t c;
-            
-            int e = c.cipc.initSHM(fpid, true);
-            
-            if (e < 0) {
-                logError("master", LOG_ERROR, "shm inialization failed with: %d", e);
+
+            if ((ec = c.cipc.initSHM(fpid, true)) < 0) {
+                logError("master", LOG_ERROR, "shm inialization failed with: %d", ec);
                 return -1;
             }
             
