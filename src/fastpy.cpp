@@ -128,7 +128,7 @@ namespace fp {
         static int sem_id = 99;     // random number here
         sem_id++;                   // choosed by roll dice
         
-        if ((ec = s.initSEM(sem_id)) < 0) {
+        if ((ec = s.initSEM(sem_id, true)) < 0) {
             logError("master", LOG_ERROR, "unable to init startup semaphore: %d", ec);
             return -1;            
         }
