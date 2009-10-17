@@ -180,8 +180,10 @@ namespace fp {
      */
     
     int worker::nowaitWorker() {
-        wipc.shm->w_code = W_FAIL;
-        wipc.freeSHM();
+        if (wipc.shm != NULL) {
+            wipc.shm->w_code = W_FAIL;
+            wipc.freeSHM();   
+        }
         
         return 0;
     }
