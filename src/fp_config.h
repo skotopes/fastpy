@@ -54,6 +54,7 @@ namespace fp {
 
     protected:
         static char *app_name;
+        static char *conf_name;
         static conf_t conf;
         static wsgi_t wsgi;
     };
