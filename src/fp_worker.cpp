@@ -61,32 +61,33 @@ namespace fp {
     }
     
     int worker::startWorker() {
+        int ec;
         // initializing context
         logError("worker", LOG_DEBUG, "service initing shared memory");
 
-        if (wipc.initSHM(wpid) < 0) {
-            logError("worker", LOG_ERROR, "unable to attach to shm zone, probably system limit exceeded");
+        if ((ec = wipc.initSHM(wpid)) < 0) {
+            logError("worker", LOG_ERROR, "unable to attach to shm zone, error code: %d", ec);
             return -1;
         }
         
         logError("worker", LOG_DEBUG, "initing python types");
 
-        if (py->typeInit() < 0) {
-            logError("worker", LOG_ERROR, "python type initialization error");
+        if ((ec = py->typeInit()) < 0) {
+            logError("worker", LOG_ERROR, "python type initialization error: %d", ec);
             return -1;
         }
         
         logError("worker", LOG_DEBUG, "initing python path");
         
-        if (py->setPath() < 0) {
-            logError("worker", LOG_ERROR, "python path change error");
+        if ((ec = py->setPath()) < 0) {
+            logError("worker", LOG_ERROR, "python path change error: %d", ec);
             return -1;
         } 
 
         logError("worker", LOG_DEBUG, "initing python callback");
         
-        if (py->initCallback() < 0) {
-            logError("worker", LOG_ERROR, "python callback initialization error");
+        if ((ec = py->initCallback()) < 0) {
+            logError("worker", LOG_ERROR, "python callback initialization error: %d", ec);
             return -1;
         }
 
@@ -100,7 +101,7 @@ namespace fp {
             for (int i=0;i < conf.threads_cnt;i++) {
                 pthread_t thread;
                 
-                int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
+                ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
                 
                 if (ec) {
                     return -2;
@@ -110,7 +111,7 @@ namespace fp {
                 threads.push_back(thread);
             }
 
-            int ec = pthread_create(&scheduler_thread, &attr, worker::schedulerThread, (void*)this);
+            ec = pthread_create(&scheduler_thread, &attr, worker::schedulerThread, (void*)this);
             
             if (ec) {
                 return -3;
@@ -121,7 +122,7 @@ namespace fp {
             logError("worker", LOG_WARN, "thread count = 0, it means that multi-thread logic will be switched off");
             pthread_t thread;
             
-            int ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
+            ec = pthread_create(&thread, &attr, worker::workerThread, (void*)this);
             
             if (ec) {
                 return -2;
