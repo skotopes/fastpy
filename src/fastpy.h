@@ -45,7 +45,7 @@ namespace fp {
         char *sock_f;
         static int msig;
         
-        std::map<int,child_t> childrens;
+        std::map<pid_t,child_t> childrens;
 
         int startChild();
         int masterLoop();

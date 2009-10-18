@@ -135,7 +135,7 @@ namespace fp {
 
         s.lock();
         
-        int fpid = fork();
+        pid_t fpid = fork();
         
         if (fpid == 0) {            
             s.lock();
@@ -210,7 +210,23 @@ namespace fp {
         while (working) {
             // iterating throw the map
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
+                pid_t c_pid = (pid_t)&(*c_it).first;
                 child_t *c = &(*c_it).second;
+                int c_ec, w_ec;
+                
+                w_ec = waitpid(c_pid, &c_ec, WNOHANG);
+
+                if (w_ec == c_pid) {
+                    if (WIFEXITED(c_ec) != 0) {
+                        c->dead = true;
+                        logError("master", LOG_WARN, "child exited normaly: %d", c_pid);
+                    } else if (WIFSIGNALED(c_ec) != 0) {
+                        c->dead = true;
+                        logError("master", LOG_WARN, "child died as an hero: %d, with code: %d", c_pid, WTERMSIG(c_ec));
+                    }
+                } else if (w_ec < 0) {
+                    logError("master", LOG_WARN, "waitpid error for child: %d, error code: %d", c_pid, errno);
+                }
                 
                 if (c->dead) {
                     c->cipc.freeSHM(true);
