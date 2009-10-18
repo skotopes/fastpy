@@ -210,7 +210,7 @@ namespace fp {
         while (working) {
             // iterating throw the map
             for (c_it = childrens.begin(); c_it != childrens.end(); c_it++) {
-                pid_t c_pid = (pid_t)&(*c_it).first;
+                pid_t c_pid = (*c_it).first;
                 child_t *c = &(*c_it).second;
                 int c_ec, w_ec;
                 
