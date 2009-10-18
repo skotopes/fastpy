@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/types.h> 
+#include <sys/wait.h>
 #include <pwd.h>
 #include <grp.h>
 
