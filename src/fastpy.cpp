@@ -213,19 +213,20 @@ namespace fp {
                 pid_t c_pid = (*c_it).first;
                 child_t *c = &(*c_it).second;
                 int c_ec, w_ec;
-                
+
+                // we against zombie on linux ;-)
                 w_ec = waitpid(c_pid, &c_ec, WNOHANG);
 
                 if (w_ec == c_pid) {
                     if (WIFEXITED(c_ec) != 0) {
                         c->dead = true;
-                        logError("master", LOG_WARN, "child exited normaly: %d", c_pid);
+                        logError("master", LOG_WARN, "child %d exited normaly with code: %d", c_pid, WEXITSTATUS(c_ec));
                     } else if (WIFSIGNALED(c_ec) != 0) {
                         c->dead = true;
-                        logError("master", LOG_WARN, "child died as an hero: %d, with code: %d", c_pid, WTERMSIG(c_ec));
+                        logError("master", LOG_WARN, "child %d died as an hero with signal: %d", c_pid, WTERMSIG(c_ec));
                     }
                 } else if (w_ec < 0) {
-                    logError("master", LOG_WARN, "waitpid error for child: %d, error code: %d", c_pid, errno);
+                    logError("master", LOG_WARN, "waitpid error for child %d failed, error code: %d", c_pid, errno);
                 }
                 
                 if (c->dead) {
