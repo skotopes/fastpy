@@ -239,6 +239,7 @@ namespace fp {
                 
                 if (c->cipc.shm->timestamp != 0 && (c->cipc.shm->timestamp + 10) < time(NULL)) {
                     logError("master", LOG_WARN, "child ts is timed out, terminating child");
+                    c->cipc.shm->m_code = M_TERM;
                     c->cipc.freeSHM(true);
                     childrens.erase(c_it);
                     startChild();

@@ -892,11 +892,7 @@ namespace fp {
             if (pIter == NULL) {
                 return -6;
             }
-            
-            if (sendHeaders(h) < 0) {
-                return -13;
-            }
-            
+                        
             while ((pItem = PyIter_Next(pIter))) {
                 // checking that this shit is a string
                 if (!PyString_Check(pItem)) {
@@ -916,6 +912,11 @@ namespace fp {
                     return -8;
                 }
 
+                // headers goes first
+                if (sendHeaders(h) < 0) {
+                    return -13;
+                }
+                
                 // looks like everything is ok and now we can send body
                 fcgi->writeResponse(req, pOutput);
                 Py_END_ALLOW_THREADS

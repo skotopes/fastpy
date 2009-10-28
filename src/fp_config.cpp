@@ -11,8 +11,6 @@
 
 namespace fp {
     char *config::app_name = NULL;
-    char *config::conf_name = NULL;
-
     bool config::detach = false;
     bool config::verbose = false;
     bool config::debug = false;
@@ -31,7 +29,6 @@ namespace fp {
     int config::readConf(char *file_name) {
         char buff[65535];
         std::string line;
-        conf_name = file_name;
         in_file->open(file_name, std::fstream::in);
         
         if (!in_file->is_open()) {

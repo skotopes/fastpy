@@ -28,7 +28,7 @@ namespace fp {
         }
         
         // creating key
-        if ((key = ftok(conf_name, w_num)) == -1) {
+        if ((key = ftok("/tmp", w_num)) == -1) {
             return -1;
         }
         
@@ -92,7 +92,7 @@ namespace fp {
         }
         
         // creating key
-        if ((key = ftok(conf_name, w_num)) == -1) {
+        if ((key = ftok("/tmp", w_num)) == -1) {
             return -1;
         }
                 
