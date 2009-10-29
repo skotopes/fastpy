@@ -86,7 +86,7 @@ namespace fp {
 
         logError("worker", LOG_DEBUG, "initing python callback");
         
-        if ((ec = py->initCallback()) < 0) {
+        if ((ec = py->initModule()) < 0) {
             logError("worker", LOG_ERROR, "python callback initialization error: %d", ec);
             return -1;
         }
@@ -162,7 +162,6 @@ namespace fp {
 
         logError("worker", LOG_DEBUG, "threads finished, releasing callback");
         
-        py->releaseCallback();
         delete py;
 
         // Let`s inform master about our death

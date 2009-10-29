@@ -99,10 +99,10 @@ namespace fp {
         int setPath();
         
         // wsgi callback module routines
-        int initCallback();
+        int initModule();
         inline bool isCallbackReady() {return cbr_flag;};
-        inline PyObject *getCallback() {return pFunc;};
-        int releaseCallback();
+        PyObject *getCallback();
+        int releaseCallback(PyObject *pCallback);
 
         // start response object routines
         StartResponseObject *newSRObject();
@@ -118,7 +118,6 @@ namespace fp {
         // wsgi call back
         static bool cbr_flag;
         static PyObject *pModule;
-        static PyObject *pFunc;
         
         // start_response
         static PyTypeObject StartResponseType;

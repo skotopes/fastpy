@@ -150,11 +150,9 @@ namespace fp {
 
     bool pyengine::cbr_flag = false;
     PyObject *pyengine::pModule = NULL;
-    PyObject *pyengine::pFunc = NULL;
 
-    int pyengine::initCallback() {
+    int pyengine::initModule() {
         mainLockTC();
-        
         // getting srcipt object
         PyObject *pScript = PyString_FromString(wsgi.script.c_str());
         
@@ -168,18 +166,18 @@ namespace fp {
             mainUnlockTC();
             return -1;
         }
-        
+        /*
         // get our method from module
-        pFunc = PyObject_GetAttrString(pModule, (char *)wsgi.point.c_str());
+        pCallback = PyObject_GetAttrString(pModule, (char *)wsgi.point.c_str());
         
-        if (pFunc == NULL || !PyCallable_Check(pFunc)) {
-            Py_XDECREF(pFunc);
+        if (pCallback == NULL || !PyCallable_Check(pCallback)) {
+            Py_XDECREF(pCallback);
             Py_DECREF(pModule);
             PyErr_Print();
             mainUnlockTC();
             return -2;
         }
-        
+        */
         cbr_flag = true;
 
         mainUnlockTC();
@@ -187,9 +185,38 @@ namespace fp {
         return 0;
     }
     
-    int pyengine::releaseCallback() {
+    PyObject *pyengine::getCallback() {
+        // getting srcipt object
+        PyObject *pCallback;
+        PyObject *pScript = PyString_FromString(wsgi.script.c_str());
+        
+        // Importing object
+        pModule = PyImport_Import(pScript);
+        Py_DECREF(pScript);
+        
+        // if pModule was imported prperly we will be able to continue
+        if (pModule == NULL) {
+            PyErr_Print();
+            return NULL;
+        }
+        
+        // get our method from module
+        pCallback = PyObject_GetAttrString(pModule, (char *)wsgi.point.c_str());
+        
+        if (pCallback == NULL || !PyCallable_Check(pCallback)) {
+            Py_XDECREF(pCallback);
+            Py_DECREF(pModule);
+            PyErr_Print();
+            mainUnlockTC();
+            return NULL;
+        }
+        
+        return pCallback;
+    }
+    
+    int pyengine::releaseCallback(PyObject *pCallback) {
         // cleanup handler
-        Py_XDECREF(pFunc);
+        Py_XDECREF(pCallback);
         Py_XDECREF(pModule);
         
         return 0;
@@ -793,6 +820,7 @@ namespace fp {
     }
     
     handler::~handler() {
+        py->releaseCallback(pCallback);
         py->deleteThreadState(t);
     }
     
