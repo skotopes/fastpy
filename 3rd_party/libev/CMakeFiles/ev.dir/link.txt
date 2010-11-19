@@ -1,0 +1,2 @@
+/usr/bin/ar cr libev.a  CMakeFiles/ev.dir/ev.c.o
+/usr/bin/ranlib libev.a

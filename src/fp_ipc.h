@@ -10,6 +10,7 @@
 #ifndef FP_IPC_H
 #define FP_IPC_H
 
+#include <stdint.h>
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/ipc.h>

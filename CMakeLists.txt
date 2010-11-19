@@ -1,51 +1,46 @@
-cmake_minimum_required(VERSION 2.0)
-
-if(COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+cmake_minimum_required(VERSION 2.6)
+include(CheckIncludeFileCXX)
+set(CMAKE_INSTALL_PREFIX "/usr")
 
 project(robot CXX)
-INCLUDE(CheckIncludeFileCXX)
+add_subdirectory(3rd_party/libev)
 
-CHECK_INCLUDE_FILE_CXX("fcgiapp.h" HAVE_FCGI)
+check_include_file_cxx("fcgiapp.h" HAVE_FCGI)
 
-IF (NOT HAVE_FCGI)
-    MESSAGE(FATAL_ERROR "Could not find fastcgi headers")
-ENDIF(NOT HAVE_FCGI)
+if (NOT HAVE_FCGI)
+    message(FATAL_ERROR "Could not find fastcgi headers")
+endif (NOT HAVE_FCGI)
 
-IF (CUSTOM_PYTHON)
-    # Some stuff from python-config, not ready yet for usage
-    EXECUTE_PROCESS(COMMAND ${CUSTOM_PYTHON} --prefix  OUTPUT_VARIABLE PYTHON_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
-    EXECUTE_PROCESS(COMMAND ${CUSTOM_PYTHON} --ldflags OUTPUT_VARIABLE PYTHON_CONF_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-    EXECUTE_PROCESS(COMMAND ${CUSTOM_PYTHON} --cflags OUTPUT_VARIABLE PYTHON_CONF_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-    EXECUTE_PROCESS(COMMAND ${CUSTOM_PYTHON} --libs OUTPUT_VARIABLE PYTHON_CONF_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (CUSTOM_PYTHON)
+    execute_process(COMMAND ${CUSTOM_PYTHON} --prefix  OUTPUT_VARIABLE PYTHON_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${CUSTOM_PYTHON} --ldflags OUTPUT_VARIABLE PYTHON_CONF_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${CUSTOM_PYTHON} --cflags OUTPUT_VARIABLE PYTHON_CONF_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND ${CUSTOM_PYTHON} --libs OUTPUT_VARIABLE PYTHON_CONF_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    string(REGEX MATCH "[-][L]([^ ;])+" PYTHON_LINK_DIR ${PYTHON_CONF_LDFLAGS}) 
-    IF (NOT PYTHON_LINK_DIR)
-	set(PYTHON_LINK_DIR "${PYTHON_PREFIX}/lib")
-    ELSE (NOT PYTHON_LINK_DIR)
-	string(REPLACE "-L" "" PYTHON_LINK_DIR ${PYTHON_LINK_DIR})
-    ENDIF (NOT PYTHON_LINK_DIR)
+    string(REGEX MATCH "[-][L]([^ ;])+" PYTHON_LINK_DIR ${PYTHON_CONF_LDFLAGS})
+
+    if (NOT PYTHON_LINK_DIR)
+        set(PYTHON_LINK_DIR "${PYTHON_PREFIX}/lib")
+    else (NOT PYTHON_LINK_DIR)
+        string(REPLACE "-L" "" PYTHON_LINK_DIR ${PYTHON_LINK_DIR})
+    endif (NOT PYTHON_LINK_DIR)
 
     string(REGEX MATCH "[-][I]([^ ;])+" PYTHON_INCLUDE_PATH ${PYTHON_CONF_CFLAGS})
     string(REPLACE "-I" "" PYTHON_INCLUDE_PATH ${PYTHON_INCLUDE_PATH})
-
     string(REGEX MATCHALL "[-][l]([^;])+" PYTHON_LIBRARY ${PYTHON_CONF_LDFLAGS})
 
     link_directories(${PYTHON_LINK_DIR})
-ELSE (CUSTOM_PYTHON)
-    FIND_PACKAGE(PythonLibs)
-ENDIF (CUSTOM_PYTHON)
+else (CUSTOM_PYTHON)
+    find_package(PythonLibs)
+endif (CUSTOM_PYTHON)
 
 MESSAGE("Python build env:
-\t Prefix: ${PYTHON_PREFIX} 
+ \t Prefix: ${PYTHON_PREFIX}
 \t Lib dir: ${PYTHON_LINK_DIR}
 \t Inludes dir: ${PYTHON_INCLUDE_PATH}
 \t Libs2link: ${PYTHON_LIBRARY}")
 
-SET(CMAKE_INSTALL_PREFIX "/usr")
-add_subdirectory( src )
-include_directories( src ${PYTHON_INCLUDE_PATH})
+include_directories( src 3rd_party/libev ${PYTHON_INCLUDE_PATH})
 
 set(fastpy_src
     src/fastpy.cpp
@@ -60,8 +55,8 @@ set(fastpy_src
 
 add_executable(fastpy ${fastpy_src})
 
-target_link_libraries(fastpy pthread fcgi ${PYTHON_LIBRARY})
-set_target_properties(fastpy PROPERTIES VERSION 0.0.6 SOVERSION 0)
+target_link_libraries(fastpy ${PYTHON_LIBRARY} pthread fcgi ev rt)
+set_target_properties(fastpy PROPERTIES VERSION 0.1.0 SOVERSION 0)
 
 ########### install files ###############
 
