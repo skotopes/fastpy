@@ -1,0 +1,5 @@
+This is fastcgi to python WSGI gateway, written in c++, supports PEP333 excluding write()
+it can speed up WSGI python application up to 500% (mainly on simple and quick answers)
+
+It`s extremely experimental and dirty implementation, was written just for fun.
+This project is partially abandoned, send me message if it`s interesting for you.
